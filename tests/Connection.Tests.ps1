@@ -1,10 +1,10 @@
 
 Describe "Connection" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:connection_test_guid = New-Guid
-            $Script:testerEmail = $env:FreshservicePS_Instance_Admin_Email
+            $Script:testerEmail = $env:FreshservicePSU_Instance_Admin_Email
 
             $newFreshServiceConnectionSplat = @{
                 Name         = 'my_connection_{0}' -f $connection_test_guid

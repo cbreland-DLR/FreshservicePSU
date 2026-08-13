@@ -3,7 +3,7 @@
     Gets a Freshservice connection stored in a configuration file.
 
 .DESCRIPTION
-    Gets a Freshservice connection(s) stored in the configuration file %APPDATA%\FreshservicePS\FreshservicePS.config. Freshservice is a session-less API, the settings created with this cmdlet are used as
+    Gets a Freshservice connection(s) stored in the configuration file %APPDATA%\FreshservicePSU\FreshservicePSU.config. Freshservice is a session-less API, the settings created with this cmdlet are used as
     global variables for function\cmdlet execution in the module.
 
 .PARAMETER Name
@@ -34,7 +34,7 @@
     Environment  : Sandbox
     Default      : False
 
-    Returns all stored configurations in %APPDATA%\FreshservicePS\FreshservicePS.config.
+    Returns all stored configurations in %APPDATA%\FreshservicePSU\FreshservicePSU.config.
 
 .EXAMPLE
     Get-FreshServiceConnection -Name acme_sandbox -Decrypt

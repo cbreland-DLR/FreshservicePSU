@@ -1,6 +1,6 @@
 ---
-external help file: FreshservicePS-help.xml
-Module Name: FreshservicePS
+external help file: FreshservicePSU-help.xml
+Module Name: FreshservicePSU
 online version:
 schema: 2.0.0
 ---
@@ -18,7 +18,7 @@ New-FreshServiceConnection [[-Name] <String>] [-ApiKey] <String> [-Tenant] <Stri
 ```
 
 ## DESCRIPTION
-Creates a new Freshservice connection and stores it in a configuration file %APPDATA%\FreshservicePS\FreshservicePS.config.
+Creates a new Freshservice connection and stores it in a configuration file %APPDATA%\FreshservicePSU\FreshservicePSU.config.
 Freshservice is a session-less API, the settings created with this cmdlet are used as
 global variables for function\cmdlet execution in the module.
 

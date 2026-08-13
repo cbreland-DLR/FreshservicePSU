@@ -1,6 +1,6 @@
 
 Describe "Business Hours" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:business_hour_test_guid = New-Guid

@@ -1,5 +1,5 @@
 Describe "SLA Policies" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
         BeforeDiscovery {
             Connect-FreshService -Name ItsFine_Prod -NoBanner
         }

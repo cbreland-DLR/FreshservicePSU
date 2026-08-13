@@ -1,6 +1,6 @@
 
 Describe "Assets" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:asset_test_guid = New-Guid

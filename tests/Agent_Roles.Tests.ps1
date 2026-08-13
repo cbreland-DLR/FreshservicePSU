@@ -1,6 +1,6 @@
 
 Describe "Agents" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:agentRoles = Get-FreshServiceAgentRole

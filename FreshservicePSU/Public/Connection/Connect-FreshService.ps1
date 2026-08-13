@@ -34,7 +34,7 @@
 .EXAMPLE
     Connect-Freshservice -Name acme_prod
 
-    Use a stored connection created with New-FreshServiceConnection to establish variables for FreshservicePS cmdlets.
+    Use a stored connection created with New-FreshServiceConnection to establish variables for FreshservicePSU cmdlets.
 
 .NOTES
     This module was developed and tested with Freshservice REST API v2.

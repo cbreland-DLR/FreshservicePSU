@@ -1,131 +1,126 @@
----
-layout: module
-permalink: /module/FreshservicePS/
----
-# [FreshservicePS](https://www.flycastpartners.com/FreshservicePS)
+# FreshservicePSU
 
-<!-- [![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/FreshservicePS.svg?style=for-the-badge)](https://www.powershellgallery.com/packages/FreshservicePS) -->
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## About
-From our continued success as a Platinum-level partner, [Flycast Partners] is considered Freshworks’ preferred partner for complex Freshservice ITSM implementations/integrations as well as a leading source of Freshservice knowledge and services. As part of our commitment to delivering high-quality services, our team of ITIL- and Freshworks-certified ITSM Consultants has created FreshservicePS, a comprehensive Freshservice PowerShell API Library, for diverse operational needs.  
+FreshservicePSU is a PowerShell module for the standard Freshservice REST API
+v2. This repository is a community-maintained fork of
+[flycastpartnersinc/FreshservicePS](https://github.com/flycastpartnersinc/FreshservicePS)
+and is not an official Freshworks product.
 
-Built by the team who garnered Freshworks Global ITSM Strategic Partner of the Year, Flycast Partners believes in contributing to the Freshworks community. Our PowerShell Modules provide organizations with a versatile solution to administer, build, and streamline their Freshservice environment. By offering our expertise and experience to fellow users, we hope to foster a culture of collaboration and knowledge-sharing that empowers this community to succeed and thrive!
+## Status
 
-With our FreshservicePS PowerShell Modules, Freshservice Admins have the ability to:
+The repository is in the planning and transition stage of a breaking,
+PowerShell 7.6 and PowerShell Universal modernization. The checked-in module is
+still inherited code and does not yet implement the target architecture or
+22-command contract. Backward compatibility with the legacy module is not a
+goal for the next major version. Do not use the development branch for critical
+automation.
 
-- Make the Freshservice API simple to use with a command-line interface
-- Manage Freshservice Ticket, Problems, Changes, Releases, Requesters, and more using simple commands
-- Provide additional reporting and filtering capabilities
-- Automate re-occurring tasks in Freshservice tenants
-- Move data between Freshservice tenants
-- Support DevOps and build, test, and deploy solutions in CI/CD operations
+This fork will not publish the redesign to the PowerShell Gallery. Versioned,
+checksummed module archives will be attached to this repository's GitHub
+releases for PSU deployment. The similarly named `FreshservicePS` Gallery
+package contains the upstream project, not the code in this repository.
 
-The FreshservicePS module aligns closely with the [Freshservice API] documentation, so be sure to reference notes, throttling and other import aspects of the Freshservice API.
+## What FreshservicePSU will be
 
-## Status - Work in progress
+FreshservicePSU will be a small, PSU-first PowerShell module for building
+Freshservice pages, APIs, reports, schedules, and automations. Its completed
+public surface will contain 22 commands organized around:
 
-> This project is a **work in progress** and may change significantly before reaching stability based on feedback from the community.
-> **Please do not base critical processes on this project** until it has been further refined.  Links to other content may not be working
-just yet as we are building content to support this project.
+- ticket creation, updates, notes, reads, searches, fields, and activity;
+- agent, group, department, location, and requester reference data;
+- asset lookup, controlled asset updates, asset types, and assignment history;
+- requested-item and task reporting;
+- ticket and cross-ticket approval reporting; and
+- SLA-policy and business-hours configuration reporting.
 
-Join the conversation on [FreshservicePS.slack.com](https://join.slack.com/t/freshserviceps/shared_invite/zt-2514m3vky-Azc3DAqh9RhpjJ0ibPwqsQ) -->
+Every command will use a shared request pipeline with bounded paging and
+records, validation, typed output, safe retries, tenant-aware rate limiting,
+normalized errors, and secret-safe auditing. PSU supplies trusted identity,
+environment, and secret-provider context. PSU controls who may run the calling
+app, API, or script. Interactive writes use the selected personal credential;
+schedules and automations use a named system identity.
 
----
+The PSU identity adapter supports both SAML and OpenID Connect. SAML is the
+current deployment, but provider-specific claims are normalized into the same
+immutable principal ID and readable username so a later OIDC migration does not
+change command behavior or credential mappings.
 
-## Instructions
+FreshservicePSU is a command library used by other scripts; it is not a
+reporting database or application data store. Consuming scripts and apps own
+their schedules, checkpoints, persistence, refresh cadence, retention, and
+data-access policy. Access control belongs to the consuming PSU app, API, or
+script and to the permissions of the resolved Freshservice API key; the module
+does not define or enforce its own PSU roles.
 
-### Installation
+The module will intentionally favor the PSU workloads above over broad API
+coverage. It will not preserve legacy connection profiles or commands, provide
+external asset synchronization, or expose destructive asset operations. The
+authoritative command-by-command behavior is in the
+[supported command reference](docs/SUPPORTED_COMMANDS.md).
 
-Install FreshservicePS from the [PowerShell Gallery]! `Install-Module` requires PowerShellGet.
+## Product boundaries
 
-```powershell
-# One time only install:
-Install-Module -Name FreshservicePS -Scope CurrentUser
+- Standard Freshservice, not Freshservice for MSPs
+- Freshservice API v2 only
+- Enterprise-plan features are allowed, subject to tenant feature flags
+- PowerShell Universal is the primary runtime for new work
 
-# Check for updates occasionally:
-Update-Module -Name FreshservicePS
-```
+## Current development checkout
 
-### Usage
-
-Create a connection profile for FreshservicePS.
-
-```powershell
-# To create a configuration to Freshservice:
-
-# Import the module
-Import-Module -Name FreshservicePS
-
-# Create a configuration to connect to the Production instance (i.e. https://acme-corp.freshservice.com)
-# API and set as the Default connection (automatically connect when importing the module):
-
-New-FreshServiceConnection -Name acme_prod -ApiKey 'gsfdgjkhdfs73jdsbd' -Tenant 'acme-corp' -Environment Production -Default $true
-
-# Create a configuration to connect to the Sandbox (i.e. https://its-fine-fs-sandbox.freshservice.com) 
-# API to switch connections using Connect-Freshservice:
-
-New-FreshServiceConnection -Name acme_sbx -ApiKey 'gsfdgjkhdfs73jdsbd' -Tenant 'acme-corp' -Environment Sandbox -Default $false
-```
-
-Connect to an environment and execute commands:
-
-```powershell
-# When importing the module, it will automatically connect to the default instance 
-# (defined with the -Default switch with 'acme_prod'):
-Import-Module FreshservicePS
-
-# To switch to another connection, use the Connect-Freshservice cmdlet:
-Connect-Freshservice -Name acme_sbx 
-```
-
-You can find the full documentation [here](https://flycastpartners.com/FreshservicePS) and in the console.
+Clone the fork for documentation review and implementation work:
 
 ```powershell
-#Review the help at any time!
-Get-Help about_FreshservicePS
-Get-Command -Module FreshservicePS
-Get-Help Get-FreshServiceTicket -Full # or any other command
+git clone https://github.com/cbreland-DLR/FreshservicePSU.git
+Set-Location ./FreshservicePSU
 ```
 
-### Rate Limit (Throttling)
+Do not treat the current manifest exports or generated command help as the
+future public contract. Phase 2 of the implementation plan removes the inherited
+runtime, command set, help, and live-tenant tests before the new command slices
+are implemented.
 
-Highly recommend reviewing the [rate limit](https://api.freshservice.com/#rate_limit) documentation for Freshservice.  The rate limit applies at the **account level** (not per API Key\account), so all accounts leveraging the API consume calls.  This module performs pagination automatically and pipeline operations that can make many API calls very quickly, so throttling at the module level is default behavior to reduce the probability of a 429 Retry-After which makes the API inaccessible for the entire account for time period (usually 30-40 seconds).  If bulk operations are being performed and no throttling should occur, use the NoThrottling switch:
+## Documentation
 
-```powershell
-Connect-Freshservice -Name my_instance -NoThrottling
-```
+- [Modernization overview](docs/ARCHITECTURE_MODERNIZATION_PLAN.md)
+- [Target architecture](docs/ARCHITECTURE.md)
+- [Supported command reference](docs/SUPPORTED_COMMANDS.md)
+- [Command prune decision](docs/COMMAND_PRUNE_LIST.md)
+- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [Open questions](docs/OPEN_QUESTIONS.md)
+- [PowerShell Universal setup](docs/PSU_SETUP.md)
+- [Current-state review](docs/CURRENT_STATE_REVIEW.md)
+- [Freshservice API v2 coverage](docs/API_V2_COVERAGE_MATRIX.md)
+- [Security policy](SECURITY.md)
+- [Inherited generated command help](docs/en-US/) — retained only until Phase 2 cleanup; it does not describe the target surface
 
-For more information on how to use FreshservicePS, tips, blogs and more, check out (COMING SOON!!).
+The current-state review documents known credential, retry, import-state, test,
+and static-analysis risks. The implementation plan defines the sequence for
+removing them.
 
-<!-- ### Contribute
+## Testing
 
-Want to contribute to FreshservicePS? Great!
-We appreciate who invests their time to make our modules the best they can be. -->
+The inherited resource tests are live-tenant integration tests. Many create,
+modify, or delete Freshservice records and are not safe as a default CI suite.
+Do not run the full suite against production. Offline unit and contract tests,
+static-analysis policy, and isolated live-test lanes are planned as part of the
+modernization.
 
-<!-- Check out our guidelines on [Contributing] to our modules and documentation. -->
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md) before submitting a change.
 
-## Useful links
+## Support and issues
 
-- [Flycast Partners]
-- [Freshservice API]
-- [Source Code]
-- [Latest Release]
-- [Submit an Issue]
+Report reproducible bugs and proposed changes in this fork's
+[issue tracker](https://github.com/cbreland-DLR/FreshservicePSU/issues). For API
+behavior and limits, consult the
+[Freshservice API v2 documentation](https://api.freshservice.com/).
 
-- How you can help us: [List of Issues](https://github.com/flycastpartnersinc/FreshservicePS/issues?q=is%3Aissue+is%3Aopen+label%3Aup-for-grabs)
+## Attribution and license
 
-## Disclaimer
+FreshservicePSU is derived from FreshservicePS, originally developed by Rob
+Simmers and Flycast Partners, Inc. This fork retains the original Git history
+and copyright notice.
 
-Hopefully this is obvious, but:
-
-> This is an open source project (under the [MIT license]), and all contributors are volunteers. All commands are executed at your own risk. **Please ensure have good backups before you start, because you can delete a lot of stuff if you're not careful.**
-
-<!-- reference-style links -->
-  [Flycast Partners]: https://www.flycastpartners.com/
-  [Freshservice API]: https://api.freshservice.com/
-  [PowerShell Gallery]: https://www.powershellgallery.com/
-  [Source Code]: https://github.com/flycastpartnersinc/FreshservicePS
-  [Latest Release]: https://github.com/flycastpartnersinc/FreshservicePS/releases/latest
-  [Submit an Issue]: https://github.com/flycastpartnersinc/FreshservicePS/issues/new
-  [MIT license]: https://github.com/flycastpartnersinc/FreshservicePS/blob/main/LICENSE
+The project is distributed under the [MIT License](LICENSE). Freshservice and
+Freshworks are trademarks of their respective owner. Use of those names does
+not imply endorsement of this fork.

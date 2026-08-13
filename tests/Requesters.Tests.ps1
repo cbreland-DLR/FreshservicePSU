@@ -1,12 +1,12 @@
 
 Describe "Requesters" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:requester_test_guid = New-Guid
             $Script:requester_test_guid2 = New-Guid
 
-            $Script:testerEmail = $env:FreshservicePS_Instance_Admin_Email
+            $Script:testerEmail = $env:FreshservicePSU_Instance_Admin_Email
 
             $department_ids = Get-FreshServiceDepartment |
                                 Select-Object -First 2 -ExpandProperty id

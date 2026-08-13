@@ -1,9 +1,9 @@
 Describe "Contract" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
         BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:contract_test_guid = New-Guid
-            $Script:testerEmail = $env:FreshservicePS_Instance_Admin_Email
+            $Script:testerEmail = $env:FreshservicePSU_Instance_Admin_Email
 
             $agent_id = Get-FreshServiceAgent -Filter "email:'$testerEmail'" |
                             Select-Object -ExpandProperty id

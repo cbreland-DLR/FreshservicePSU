@@ -1,5 +1,9 @@
 # Taken with love from @juneb_get_help (https://raw.githubusercontent.com/juneb/PesterTDD/master/Module.Help.Tests.ps1)
 
+# This legacy data-driven suite expects absent help nodes to evaluate to $null.
+# Other test files enable strict mode in the shared Pester discovery session.
+Set-StrictMode -Off
+
 BeforeDiscovery {
 
     function global:FilterOutCommonParams {
@@ -7,23 +11,39 @@ BeforeDiscovery {
         $commonParams = @(
             'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable',
             'OutBuffer', 'OutVariable', 'PipelineVariable', 'Verbose', 'WarningAction',
-            'WarningVariable', 'Confirm', 'Whatif'
+            'WarningVariable', 'Confirm', 'Whatif', 'ProgressAction'
         )
-        $params | Where-Object { $_.Name -notin $commonParams } | Sort-Object -Property Name -Unique
+        $params |
+            Where-Object { $_ -and $_.PSObject.Properties['Name'] -and $_.Name -notin $commonParams } |
+            Sort-Object -Property Name -Unique
     }
 
-    $manifest             = Import-PowerShellDataFile -Path $env:BHPSModuleManifest
-    $outputDir            = Join-Path -Path $env:BHProjectPath -ChildPath 'Output'
-    $outputModDir         = Join-Path -Path $outputDir -ChildPath $env:BHProjectName
-    $outputModVerDir      = Join-Path -Path $outputModDir -ChildPath $manifest.ModuleVersion
-    $outputModVerManifest = Join-Path -Path $outputModVerDir -ChildPath "$($env:BHProjectName).psd1"
+    function global:GetHelpParameterNodes {
+        param ($Help)
+
+        $parametersProperty = $Help.PSObject.Properties['Parameters']
+        if (-not $parametersProperty -or -not $parametersProperty.Value) {
+            return @()
+        }
+
+        $parameterProperty = $parametersProperty.Value.PSObject.Properties['Parameter']
+        if (-not $parameterProperty) {
+            return @()
+        }
+
+        @($parameterProperty.Value)
+    }
+
+    $projectRoot          = Split-Path -Path $PSScriptRoot -Parent
+    $moduleName           = 'FreshservicePSU'
+    $sourceManifest       = Join-Path -Path $projectRoot -ChildPath "$moduleName/$moduleName.psd1"
 
     # Get module commands
     # Remove all versions of the module from the session. Pester can't handle multiple versions.
-    Get-Module $env:BHProjectName | Remove-Module -Force -ErrorAction Ignore
-    Import-Module -Name $outputModVerManifest -Verbose:$false -ErrorAction Stop
+    Get-Module $moduleName | Remove-Module -Force -ErrorAction Ignore
+    Import-Module -Name $sourceManifest -Verbose:$false -ErrorAction Stop
     $params = @{
-        Module      = (Get-Module $env:BHProjectName)
+        Module      = (Get-Module $moduleName)
         CommandType = [System.Management.Automation.CommandTypes[]]'Cmdlet, Function' # Not alias
     }
     if ($PSVersionTable.PSVersion.Major -lt 6) {
@@ -42,8 +62,15 @@ Describe "Test help for <_.Name>" -ForEach $commands {
         $Script:command               = $_
         $Script:commandHelp           = Get-Help $command.Name -ErrorAction SilentlyContinue
         $Script:commandParameters     = global:FilterOutCommonParams -Params $command.ParameterSets.Parameters
-        $Script:commandParameterNames = $commandParameters.Name
-        $Script:helpLinks             = $commandHelp.relatedLinks.navigationLink.uri
+        $Script:commandParameterNames = @($commandParameters | Select-Object -ExpandProperty Name)
+        $Script:helpParameters        = global:FilterOutCommonParams -Params (global:GetHelpParameterNodes -Help $commandHelp)
+        $Script:helpParameterNames    = @($helpParameters | Select-Object -ExpandProperty Name)
+        $Script:helpLinks             = if ($commandHelp.PSObject.Properties['relatedLinks']) {
+            $commandHelp.relatedLinks.navigationLink.uri
+        }
+        else {
+            @()
+        }
     }
 
     BeforeAll {
@@ -52,9 +79,9 @@ Describe "Test help for <_.Name>" -ForEach $commands {
         $Script:commandName            = $_.Name
         $Script:commandHelp            = Get-Help $command.Name -ErrorAction SilentlyContinue
         $Script:commandParameters      = global:FilterOutCommonParams -Params $command.ParameterSets.Parameters
-        $Script:commandParameterNames  = $commandParameters.Name
-        $Script:helpParameters         = global:FilterOutCommonParams -Params $commandHelp.Parameters.Parameter
-        $Script:helpParameterNames     = $helpParameters.Name
+        $Script:commandParameterNames  = @($commandParameters | Select-Object -ExpandProperty Name)
+        $Script:helpParameters         = global:FilterOutCommonParams -Params (global:GetHelpParameterNodes -Help $commandHelp)
+        $Script:helpParameterNames     = @($helpParameters | Select-Object -ExpandProperty Name)
     }
 
     # If help is not found, synopsis in auto-generated help is the syntax diagram
@@ -77,7 +104,7 @@ Describe "Test help for <_.Name>" -ForEach $commands {
         ($commandHelp.Examples.Example.Remarks | Select-Object -First 1).Text | Should -Not -BeNullOrEmpty
     }
 
-    It "Help link <_> is valid" -ForEach $helpLinks {
+    It "Help link <_> is valid" -Tag 'Network' -ForEach $helpLinks {
         (Invoke-WebRequest -Uri $_ -UseBasicParsing).StatusCode | Should -Be '200'
     }
 
@@ -111,7 +138,7 @@ Describe "Test help for <_.Name>" -ForEach $commands {
 
         # Shouldn't find extra parameters in help.
         It "finds help parameter in code: <_>" {
-            $_ -in $parameterNames | Should -Be $true
+            $_ -in $commandParameterNames | Should -Be $true
         }
     }
 }

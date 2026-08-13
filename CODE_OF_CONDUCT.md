@@ -53,12 +53,11 @@ further defined and clarified by project maintainers.
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [developers@flycastpartners.com](mailto:developers@flycastpartners.com). All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
+Instances of abusive, harassing, or otherwise unacceptable behavior should be
+reported privately to the repository maintainer using the contact information on
+the maintainer's GitHub profile. Do not include sensitive reports in a public
+issue. Reports will be reviewed and investigated, and confidentiality will be
+maintained as far as reasonably possible.
 
 Project maintainers who do not follow or enforce the Code of Conduct in good
 faith may face temporary or permanent repercussions as determined by other

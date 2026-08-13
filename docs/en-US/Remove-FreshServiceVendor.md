@@ -1,6 +1,6 @@
 ---
-external help file: FreshservicePS-help.xml
-Module Name: FreshservicePS
+external help file: FreshservicePSU-help.xml
+Module Name: FreshservicePSU
 online version:
 schema: 2.0.0
 ---

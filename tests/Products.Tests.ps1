@@ -1,6 +1,6 @@
 
 Describe "Products" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:product_test_guid = New-Guid

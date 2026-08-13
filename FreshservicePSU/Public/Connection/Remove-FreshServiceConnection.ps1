@@ -3,7 +3,7 @@
     Delete a Freshservice Connection.
 
 .DESCRIPTION
-    Delete a named Freshservice Connection stored in the configuration file %APPDATA%\FreshservicePS\FreshservicePS.config.
+    Delete a named Freshservice Connection stored in the configuration file %APPDATA%\FreshservicePSU\FreshservicePSU.config.
 
 .PARAMETER Name
     Friendly name of the configuration being saved.  This is what will be referenced with the Connect-FreshService cmdlet.  For instance,

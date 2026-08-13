@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Fork lineage
+
+This repository is maintained as a fork at
+<https://github.com/cbreland-DLR/FreshservicePSU>. The release history below,
+through version 0.1.6, belongs to the original
+<https://github.com/flycastpartnersinc/FreshservicePS> project. Changes made in
+this fork are recorded above the inherited history.
+
+## [Unreleased]
+
+### Planned breaking release
+
+- Rebuild the module as FreshservicePSU `1.0.0` for PowerShell Universal and
+  PowerShell 7.6.
+- Replace the inherited connection-profile and command surface with the focused
+  22-command contract documented in `docs/SUPPORTED_COMMANDS.md`.
+- Distribute checksummed GitHub release artifacts rather than publishing the
+  fork to the PowerShell Gallery.
+
+This section records accepted intent until implementation lands. Release notes
+will enumerate removed commands, changed parameters, and output contracts before
+`1.0.0` is tagged.
+
 ## [0.1.6]
 
 ### Fixed

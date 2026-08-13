@@ -36,7 +36,7 @@ function Invoke-FreshworksRestMethod {
             Performs a GET on a function defined URI.
 
         .NOTES
-            This is where the Invoke-RestMethod is called for all FreshservicePS cmdlets.  This is the only
+            This is where the Invoke-RestMethod is called for all FreshservicePSU cmdlets.  This is the only
             cmdlet that requires authentication data such as AuthorizationToken and settings
             to manipulate certificate security and TLS. This is a internal private function
     #>

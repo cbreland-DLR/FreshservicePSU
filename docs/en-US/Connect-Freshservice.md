@@ -1,6 +1,6 @@
 ---
-external help file: FreshservicePS-help.xml
-Module Name: FreshservicePS
+external help file: FreshservicePSU-help.xml
+Module Name: FreshservicePSU
 online version:
 schema: 2.0.0
 ---
@@ -32,7 +32,7 @@ the tenant that will be used for cmdlet execution.
 Connect-Freshservice -Name acme_prod
 ```
 
-Use a stored connection created with New-FreshServiceConnection to establish variables for FreshservicePS cmdlets.
+Use a stored connection created with New-FreshServiceConnection to establish variables for FreshservicePSU cmdlets.
 
 ## PARAMETERS
 

@@ -1,6 +1,6 @@
 
 Describe "Service Catalog" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:service_catalog_test_guid = New-Guid

@@ -3,7 +3,7 @@
     Updates a Freshservice connection.
 
 .DESCRIPTION
-    Updates a Freshservice connection and stores it in a configuration file %APPDATA%\FreshservicePS\FreshservicePS.config. Freshservice is a session-less API, the settings created with this cmdlet are used as
+    Updates a Freshservice connection and stores it in a configuration file %APPDATA%\FreshservicePSU\FreshservicePSU.config. Freshservice is a session-less API, the settings created with this cmdlet are used as
     global variables for function\cmdlet execution in the module.
 
     Note: The API Key is encrypted using Powershell encyption, which requires decryption by the same user and machine the encryption occured with.  This configuration will only work on the same machine\same user.

@@ -1,6 +1,6 @@
 ---
-external help file: FreshservicePS-help.xml
-Module Name: FreshservicePS
+external help file: FreshservicePSU-help.xml
+Module Name: FreshservicePSU
 online version:
 schema: 2.0.0
 ---
@@ -17,7 +17,7 @@ Remove-FreshServiceConnection [-Name] <String> [-WhatIf] [-Confirm] [<CommonPara
 ```
 
 ## DESCRIPTION
-Delete a named Freshservice Connection stored in the configuration file %APPDATA%\FreshservicePS\FreshservicePS.config.
+Delete a named Freshservice Connection stored in the configuration file %APPDATA%\FreshservicePSU\FreshservicePSU.config.
 
 ## EXAMPLES
 

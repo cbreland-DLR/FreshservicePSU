@@ -1,5 +1,5 @@
 Describe "Agents" {
-    InModuleScope FreshservicePS {
+    InModuleScope FreshservicePSU {
          BeforeDiscovery {
             Connect-Freshservice -Name ItsFine_Prod -NoBanner
             $Script:agent_test_guid = New-Guid
