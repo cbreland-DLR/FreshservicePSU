@@ -244,6 +244,20 @@ unique personal-secret mappings before resolving a secret. Emit audit objects as
 
 ## 8. Phase 4 — Shared request pipeline
 
+### Sequencing within the phase
+
+The phase as a whole depends on Phase 3 and on Phase 1 limiter evidence, neither
+of which is complete. Four deliverables do not: `New-FsuUri`,
+`ConvertTo-FsuRequestBody`, `ConvertFrom-FsuResponse`, and the limiter provider
+interface with its in-memory provider. They are pure functions over contracts
+that already exist, they consume an injected context rather than resolving one,
+and the Q15 gate reserves provider interfaces and deterministic in-memory tests
+as available work. Building them early is consistent with the exit criterion
+that the pipeline be usable without PSU through explicit private test contexts.
+
+Per-request authentication, paged requests end to end, the production limiter
+provider, and PSU-cache-backed reference data remain blocked.
+
 ### Deliverables
 
 Implement:
@@ -253,7 +267,9 @@ Implement:
 - `New-FsuUri`
 - `ConvertTo-FsuRequestBody`
 - `ConvertFrom-FsuResponse`
-- `New-FsuErrorRecord`
+
+`New-FsuErrorRecord` was listed here originally but landed in Phase 3, where the
+normalized-error contract needed it; Phase 4 consumes it rather than building it.
 
 Add per-request authentication, safe logging, connection reuse, URI and query encoding, JSON and multipart serialization, explicit response extraction, typed output support, bounded retry policies, uncertain-outcome errors, page streaming, partial-result errors, cancellation, record caps, page-500 enforcement, token pagination, API-version checks, rate telemetry, the shared limiter, and reference-data caching.
 
