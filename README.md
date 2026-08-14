@@ -9,9 +9,10 @@ and is not an official Freshworks product.
 
 ## Status
 
-The repository is in the planning and transition stage of a breaking,
-PowerShell 7.6 and PowerShell Universal modernization. The checked-in module is
-still inherited code and does not yet implement the target architecture or
+The repository is in the transition stage of a breaking, PowerShell 7.6 and
+PowerShell Universal modernization. The inherited command surface has been
+removed and the checked-in module is now an empty skeleton: it imports cleanly,
+exports no commands, and does not yet implement the target architecture or
 22-command contract. Backward compatibility with the legacy module is not a
 goal for the next major version. Do not use the development branch for critical
 automation.

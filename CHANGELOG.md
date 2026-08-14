@@ -15,6 +15,28 @@ this fork are recorded above the inherited history.
 
 ## [Unreleased]
 
+### Removed
+
+- The entire inherited command surface: all 165 public commands, the on-disk
+  multi-tenant connection-profile model (`Connect-Freshservice`,
+  `New`/`Get`/`Set`/`Remove-FreshServiceConnection`), the
+  `Invoke-FreshworksRestMethod` transport, the generated `FS*` aliases, and the
+  165 generated help topics. Nothing in the module is importable as a command
+  today; the 22-command contract is implemented in later phases.
+
+### Changed
+
+- Module import has no side effects: no automatic connection, no profile or
+  config-file read, no global variables, no banner.
+- The manifest exports nothing and no longer wildcards aliases, variables, or
+  cmdlets.
+
+### Added
+
+- Offline test lanes (`tests/Unit`, `tests/Contract`, `tests/Architecture`) and
+  architecture checks enforcing the naming boundary, forbidden runtime APIs,
+  transport confined to `Private/Http`, and documentation alignment.
+
 ### Planned breaking release
 
 - Rebuild the module as FreshservicePSU `1.0.0` for PowerShell Universal and

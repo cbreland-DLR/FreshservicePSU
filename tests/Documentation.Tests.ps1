@@ -136,8 +136,8 @@ Describe 'Authoritative documentation consistency' {
 
     It 'marks the checked-in implementation as transitional' {
         $readme = Get-Content (Join-Path $repositoryRoot 'README.md') -Raw
-        $readme | Should -Match 'planning and transition stage'
-        $readme | Should -Match 'still inherited code and does not yet implement'
+        $readme | Should -Match 'transition stage'
+        $readme | Should -Match 'does not yet implement the target architecture'
     }
 
     It 'references only open-question identifiers that exist' {

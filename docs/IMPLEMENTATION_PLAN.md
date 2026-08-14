@@ -169,7 +169,7 @@ Build the target module without carrying the legacy runtime or command loader fo
 
 ### Stale artifact cleanup
 
-Removing a command is not finished when its `.ps1` file is deleted. Each removed command leaves documentation and test artifacts that keep describing a surface that no longer exists, and a stale help topic is worse than a missing one — it reads as a supported command. As of 2026-08-12 the tree carries 165 public command files and 165 generated help topics against a target of 22.
+Removing a command is not finished when its `.ps1` file is deleted. Each removed command leaves documentation and test artifacts that keep describing a surface that no longer exists, and a stale help topic is worse than a missing one — it reads as a supported command. As of 2026-08-12 the tree carried 165 public command files and 165 generated help topics against a target of 22. Phase 2 removed all of them; the table below records the before and after state of that sweep, which is complete.
 
 Delete in the same change as the command removal:
 
