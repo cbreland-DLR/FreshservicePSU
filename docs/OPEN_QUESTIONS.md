@@ -41,6 +41,52 @@ test instance and identity-provider configuration. Sanitized evidence is enough.
 | Q15 | Does server-level PSU cache plus an OS-named mutex coordinate every worker process that runs module code? Production is already confirmed as one PSU node. | Record the development topology and the worker-process count on both environments. In one environment, reserve limiter capacity from two concurrent worker processes and confirm that both observe the same counter and that the named mutex serializes them. Repeat after a PSU restart to confirm the cache is non-persistent as assumed. | Worker-process topology plus sanitized evidence that competing reservations are serialized on the single production node. A failed cross-process result reopens the provider design rather than shipping an uncoordinated limiter. |
 | Q3 | Which exact PSU 2026.x release, operating system, and PowerShell 7.6 patch run in development and production? | Read the PSU release from the admin console. In each PSU environment run `$PSVersionTable.PSVersion.ToString()` and `[System.Runtime.InteropServices.RuntimeInformation]::OSDescription`. | A development and production row containing PSU version, PowerShell version, and OS. PSU variables and the built-in secret vault are already settled. |
 
+### Vendor-documentation findings for Q1 and Q2 (2026-08-13)
+
+Collected from the Devolutions PowerShell Universal documentation, which now
+hosts the former `docs.powershelluniversal.com` content. These narrow the probe;
+none of them substitute for evidence from the actual instance, because the docs
+do not state per-surface behavior for every case the questions ask about.
+
+Established:
+
+- **There is no `$PSUIdentity` or `$UAIdentity`.** Both names circulate in
+  forum posts and older material and neither appears in the current variable
+  reference. Any design written against them would not run.
+- **The identity surface differs per execution surface**, which is the core of
+  Q1:
+
+  | Surface | Documented identity values |
+  | --- | --- |
+  | API | `$Identity` (string), `$ClaimsPrincipal` (ClaimsPrincipal) |
+  | App | `$User` (string, `$null` when authentication is disabled), `$Roles` (string[]), `$ClaimsPrincipal` |
+  | Script / Schedule | `$UAJob` (job object carrying `.Identity.Name`), `$Roles`; **no `$ClaimsPrincipal` is documented** |
+
+- **Scheduled and script executions therefore cannot perform claim-based
+  normalization.** Without a claims principal there is no `oid`/`tid` to build
+  `entra:<tenant-id>:<object-id>` from, only a name string. This supports the
+  existing design in ARCHITECTURE.md §8: noninteractive execution uses the
+  system credential rather than a personal mapping.
+- **PSU requires the SAML name claim
+  `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name`** as the user
+  identity; other attributes are available for role evaluation only if the IdP
+  is configured to send them. Entra role mapping uses
+  `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`.
+- **System app tokens are documented as "not tied directly to a user's
+  identity"** and are distinct from user app tokens.
+
+Still unknown, and what the instance probe must answer:
+
+- Whether Entra's SAML assertion actually carries object-identifier and
+  tenant-identifier claims in this tenant, and under exactly which claim type
+  URIs. Q2's `entra:<tenant-id>:<object-id>` key depends on this and cannot be
+  assumed from the required name claim alone.
+- How `$Identity` and `$ClaimsPrincipal` are populated for app-token calls, for
+  user tokens versus system tokens. The documentation does not say.
+- What each surface yields for an unknown or unauthenticated caller, which is
+  the fail-closed path.
+- Whether a reused runspace retains a previous caller's values.
+
 ## 2. Engineering defaults
 
 These can be answered by accepting the recommendation. Tests then verify the
