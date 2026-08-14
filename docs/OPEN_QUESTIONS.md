@@ -87,6 +87,18 @@ Still unknown, and what the instance probe must answer:
   the fail-closed path.
 - Whether a reused runspace retains a previous caller's values.
 
+Sources, all retrieved 2026-08-13:
+
+- <https://docs.devolutions.net/powershell-universal/platform/variables>
+- <https://docs.devolutions.net/powershell-universal/security/security>
+- <https://docs.devolutions.net/powershell-universal/security/app-tokens>
+- <https://docs.devolutions.net/powershell-universal/security/enterprise-security/saml2>
+
+Treat these as current-version documentation, not as evidence about the
+deployed instance. The older `docs.powershelluniversal.com` URLs now redirect
+here, and search results still surface pre-migration pages and forum posts —
+that is where the nonexistent `$PSUIdentity` and `$UAIdentity` names come from.
+
 ## 2. Engineering defaults
 
 These can be answered by accepting the recommendation. Tests then verify the
