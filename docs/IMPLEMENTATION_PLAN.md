@@ -60,9 +60,9 @@ CSAT remains conditional and is not part of the committed surface. Time entries 
 | 1 | PSU identity, deployment, tenant behavior, and operational limits are proven | 0 |
 | 2 | A clean PowerShell 7.6 module and offline CI foundation replace the legacy implementation | 0 |
 | 3 | Security, configuration, execution-context, response, error, and audit contracts exist | 2 plus current-SAML answers to Q1-Q2 |
-| 4 | The shared request, pagination, cache, retry, and rate-limit pipeline is complete | 3 plus Phase 1 single-node limiter-provider evidence; Q4 gates interactive budgets and Q6 gates outbound headers |
-| 5 | All read-only commands are complete in dependency order | 4; Q8-Q9 and Q12-Q14 gate only their affected reads |
-| 6 | Ticket and asset mutation commands are complete | Required Phase 5 dependencies; Q7 and Q10-Q11 gate only their affected mutations |
+| 4 | The shared request, pagination, cache, retry, and rate-limit pipeline is complete | 3 plus Phase 1 single-node limiter-provider evidence |
+| 5 | All read-only commands are complete in dependency order | 4; Q8-Q9 gate only their affected reads and Q13 is answered per command |
+| 6 | Ticket and asset mutation commands are complete | Required Phase 5 dependencies; Q7 gates only note authorship |
 | 7 | Example consumer scripts and PSU integration tests validate the command surface | 6 |
 | 8 | Module packaging, documentation, CI, and the breaking release are complete | 7 plus Q3 runtime evidence |
 
@@ -77,16 +77,10 @@ runtime-matrix evidence.
 | --- | --- | --- |
 | Q1-Q2 | Completion of the Phase 3 identity adapter and personal-secret mapping for current SAML. OIDC evidence gates only OIDC deployment readiness. | Phase 2 and identity-independent private contracts and tests. |
 | Q3 | Phase 8 compatibility matrix and final release validation. | All implementation on the declared PSU 2026.x and PowerShell 7.6 targets. |
-| Q4 | Interactive timeout and retry portion of Phase 4. | Other shared-pipeline components and noninteractive policy. |
-| Q6 | Outbound correlation-header contract in Phase 4. | All other pipeline work; the recommended audit-only decision can be accepted immediately. |
 | Q7 | Note-authorship completion in Phase 6 and final simplification or retention of personal keys. | Every other command and the default personal-key design. |
 | Q8 | `Search-FreshServiceApproval` only. | The other 21 provisional commands. |
 | Q9 | `Get-FreshServiceAssetAssignmentHistory` only. | The other 21 provisional commands. |
-| Q10 | `New-FreshServiceTicket` and `Set-FreshServiceTicket` public contracts. | All reads, notes, and asset mutation work. |
-| Q11 | `Set-FreshServiceAsset` public contract. | All reads and ticket mutations. |
-| Q12 | `Get-FreshServiceAsset` search contract. | Other asset and non-asset reads. |
 | Q13 | Final typed output for each command as that command is completed. | Starting and implementing each slice before its output table is finalized. |
-| Q14 | `Get-FreshServiceTicket` embeds only. | Basic ticket retrieval and every other read. |
 | Q15 | Completion of the Phase 4 production limiter provider. | Provider interfaces, deterministic in-memory tests, and unrelated pipeline work. |
 
 Conditional future-scope items have no phase dependency until promoted.
@@ -125,7 +119,7 @@ Conditional future-scope items have no phase dependency until promoted.
 
 ## 5. Phase 1 — PSU identity and deployment evidence
 
-This phase records facts from the PSU test instance and Freshservice sandbox. It does not implement production module behavior. It gathers answers for Q1-Q4, Q6-Q9, and Q15, but downstream work follows the localized gates above rather than waiting for every Phase 1 question.
+This phase records facts from the PSU test instance and Freshservice sandbox. It does not implement production module behavior. It gathers answers for Q1-Q3, Q7-Q9, and Q15, but downstream work follows the localized gates above rather than waiting for every Phase 1 question.
 
 ### Deliverables
 
@@ -148,7 +142,7 @@ This phase records facts from the PSU test instance and Freshservice sandbox. It
 - Prod and dev environment and secret-provider boundaries are recorded.
 - Timeout, retry, single-node atomic limiter provider, supported-OS, correlation, and note-authorship decisions have recorded outcomes; documented Enterprise limits seed the limiter and response headers provide runtime telemetry.
 - Asset assignment history and global approval search are either proven available or returned to Phase 0 for an explicit scope change. An unavailable result under Q8 or Q9 removes `Search-FreshServiceApproval` or `Get-FreshServiceAssetAssignmentHistory` from the supported set, changing the exported command count.
-- Q1 through Q4, Q6 through Q9, and Q15 are answered, recorded in the architecture or this plan, and removed from `OPEN_QUESTIONS.md`.
+- Q1 through Q3, Q7 through Q9, and Q15 are answered, recorded in the architecture or this plan, and removed from `OPEN_QUESTIONS.md`.
 
 ## 6. Phase 2 — Clean PowerShell 7.6 module and CI foundation
 

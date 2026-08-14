@@ -391,6 +391,10 @@ Every endpoint uses this pipeline. Transport uses a **module-scoped `HttpClient`
 
 Interactive PSU calls use a short budget below the browser/API timeout. Background jobs may use a longer bounded policy. A low remaining budget can warn, reserve capacity, or refuse new bulk work; it must not cause an arbitrary sleep on an interactive path.
 
+**Accepted budgets.** An interactive operation has a **20-second total-time budget**, measured from the first send through the last retry. A retry is attempted only when the next backoff wait *plus* an estimated request duration fits inside the remaining budget; otherwise the operation fails immediately with the normalized error rather than consuming the budget in a wait it cannot afford. Noninteractive callers may configure a longer bounded budget, defaulting to **120 seconds**. Both values are configuration, not public command parameters. If development PSU proves the host terminates interactive requests sooner than 20 seconds, the configured interactive budget is lowered to sit below the observed limit; the retry rule is unchanged by that measurement.
+
+**Correlation.** Every operation carries a correlation ID through its audit events and normalized errors. It is **not** sent to Freshservice: the module adds no custom correlation request header, because no documented Freshservice v2 header accepts one. A contract test asserts that no such header appears on outbound requests. A future documented vendor requirement reopens this.
+
 ### Pagination and embedding
 
 - Set `per_page` explicitly and validate it from 1 through 100.

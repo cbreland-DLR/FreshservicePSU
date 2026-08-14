@@ -52,14 +52,15 @@ These resource reads are not automatically cached. Each request applies Freshser
 
 This table is the completed-product contract index. Exact parameter names,
 validation sets, property types, permissions, and examples are added to the
-generated help before a command is exported. Q10-Q14 identify the few entries
-whose final field or embed lists still require an accepted answer.
+generated help before a command is exported. The accepted field, lookup, and
+embed lists are in §6; each command's stable output properties are finalized
+with its implementation slice (`OPEN_QUESTIONS.md` Q13).
 
 | Command | Minimum public input or parameter sets | Stable output type | Special contract |
 | --- | --- | --- | --- |
-| `New-FreshServiceTicket` | Required requester identity, subject, description, and the accepted Q10 create fields | `FreshservicePSU.Ticket` | One non-idempotent create; `ShouldProcess`; no automatic replay after ambiguous delivery |
-| `Set-FreshServiceTicket` | `TicketId` plus caller-supplied accepted Q10 update fields | `FreshservicePSU.Ticket` | Sends changed fields only; `ShouldProcess`; closing is a status update |
-| `Get-FreshServiceTicket` | `TicketId`, or bounded list filters; optional accepted Q14 embeds | `FreshservicePSU.Ticket` | Streams lists; embeds are opt-in and expose documented conditional properties |
+| `New-FreshServiceTicket` | Required requester identity, subject, and description, plus the optional create fields in §6.1 | `FreshservicePSU.Ticket` | One non-idempotent create; `ShouldProcess`; no automatic replay after ambiguous delivery |
+| `Set-FreshServiceTicket` | `TicketId` plus the caller-supplied update fields in §6.1 | `FreshservicePSU.Ticket` | Sends changed fields only; `ShouldProcess`; closing is a status update |
+| `Get-FreshServiceTicket` | `TicketId`, or bounded list filters; optional embeds from §6.3 | `FreshservicePSU.Ticket` | Streams lists; embeds are opt-in and expose documented conditional properties |
 | `Search-FreshServiceTicket` | Validated Freshservice filter plus record limit | `FreshservicePSU.Ticket` | Streams bounded filter results; rejects unbounded or malformed filters |
 | `Add-FreshServiceTicketNote` | `TicketId`, body, privacy, and supported notification fields | `FreshservicePSU.TicketNote` | `ShouldProcess`; authorship follows Q7; never sends a reply |
 | `Get-FreshServiceTicketField` | Optional field identifier and bounded list controls | `FreshservicePSU.TicketField` | Eligible for the stage-and-tenant reference cache |
@@ -70,9 +71,9 @@ whose final field or embed lists still require an accepted answer.
 | `Get-FreshServiceAgent` | Agent ID or bounded list/filter input | `FreshservicePSU.Agent` | Eligible for the reference cache only when output is not permission-filtered |
 | `Get-FreshServiceRequester` | Requester ID, email, or bounded list/filter input | `FreshservicePSU.Requester` | Not implicitly cached; subject to caller permissions |
 | `Get-FreshServiceAssetType` | Asset-type ID or bounded list input | `FreshservicePSU.AssetType` | Eligible for the reference cache |
-| `Get-FreshServiceAsset` | Accepted Q12 identifier or bounded filter parameter set | `FreshservicePSU.Asset` | Exact lookup or bounded results; no component or relationship modes |
+| `Get-FreshServiceAsset` | One of the four lookup parameter sets in §6.4 | `FreshservicePSU.Asset` | Exact lookup or bounded results; no component or relationship modes |
 | `Get-FreshServiceAssetAssignmentHistory` | Exact asset display ID plus record limit | `FreshservicePSU.AssetAssignmentHistory` | Q9 feature gate; distinct unavailable error |
-| `Set-FreshServiceAsset` | Exact display ID plus accepted Q11 changed properties | `FreshservicePSU.Asset` | Sends changed fields only; `ShouldProcess`; no type change or destructive operation |
+| `Set-FreshServiceAsset` | Exact display ID plus the updatable properties in §6.2 | `FreshservicePSU.Asset` | Sends changed fields only; `ShouldProcess`; no type change or destructive operation |
 | `Get-FreshServiceRequestedItem` | Exact ticket ID plus record limit | `FreshservicePSU.RequestedItem` | Parent-scoped bounded read |
 | `Get-FreshServiceTask` | Exact ticket ID and optional task ID plus record limit | `FreshservicePSU.Task` | Ticket tasks only; parent-scoped bounded read |
 | `Get-FreshServiceRequestApproval` | Exact ticket ID and optional approval ID plus record limit | `FreshservicePSU.Approval` | Parent-scoped bounded read; no approval actions |
@@ -91,7 +92,68 @@ record-limit behavior, cache behavior, conditional properties and API-credit
 costs, normalized errors, required Freshservice endpoint permission or feature
 gate, and mutation safety where applicable.
 
-## 6. Contract shared by every command
+## 6. Accepted field, lookup, and embed contracts
+
+These lists are closed decisions. A parameter outside them is not added to a
+public command without a new accepted scope decision. Every field below is
+mapped to its exact Freshservice v2 request field during implementation, and
+request-body contract tests prove that a field the caller did not supply is
+never sent.
+
+### 6.1 Ticket create and update fields
+
+`New-FreshServiceTicket` requires a requester identity (requester ID or email),
+`Subject`, and `Description`. Both `New-FreshServiceTicket` and
+`Set-FreshServiceTicket` additionally accept:
+
+| Group | Fields |
+| --- | --- |
+| Classification | `Status`, `Priority`, `Type`, `Source`, `Urgency`, `Impact` |
+| Assignment | `GroupId`, `AgentId` (the `responder_id` field) |
+| Categorization | `Category`, `SubCategory`, `ItemCategory`, `Tags` |
+| Relationships | `DepartmentId`, `AssetDisplayId` |
+| Scheduling | `DueBy`, `FirstResponseDueBy` |
+| Extension | `CustomFields`, validated against `Get-FreshServiceTicketField` |
+
+`Set-FreshServiceTicket` also accepts `Subject`, `Description`, and
+`RequesterId`, and closing a ticket is an ordinary `Status` update rather than a
+separate parameter or command.
+
+Deliberately excluded: `workspace_id` (single-workspace tenant), attachments and
+`email_config_id` (out of scope), `cc_emails`/`reply_cc_emails` (reply
+behavior, not ticket state), and every read-only or system-computed field such
+as SLA timestamps, `spam`, and `deleted`.
+
+### 6.2 Updatable asset properties
+
+`Set-FreshServiceAsset` accepts `AssetTag`, `Name`, `Description`,
+`AssetTypeId`-independent descriptive fields, `UsageType`, `LocationId`,
+`DepartmentId`, `AgentId` (assigned agent), `UserId` (used-by requester),
+`GroupId`, `AssignedOn`, and allowlisted type-specific fields resolved through
+`Get-FreshServiceAssetType`.
+
+Deliberately excluded: changing an asset's type, creating, deleting, restoring,
+permanently deleting, or moving an asset, and writing arbitrary unvalidated
+properties. There is no external-synchronization mode.
+
+### 6.3 Ticket embeds
+
+`Get-FreshServiceTicket` exposes three opt-in embeds: `Requester`, `Stats`, and
+`Conversations`. They are validated as a set, may be combined, and any other
+value is rejected. Each embed costs additional API credits (§11 of
+`ARCHITECTURE.md`): +1 on a single-ticket read, +2 on a list read. Requested
+items, tasks, approvals, and activity have dedicated commands and are never
+exposed as embeds.
+
+### 6.4 Asset lookup parameter sets
+
+`Get-FreshServiceAsset` has four mutually exclusive parameter sets:
+`DisplayId`, `AssetTag`, `SerialNumber`, and a bounded validated `Filter` for
+list retrieval. The first three are exact lookups. There is no mode parameter
+that selects a different endpoint, and no parameter set reaches components,
+requests, contracts, or relationships.
+
+## 7. Contract shared by every command
 
 Every command:
 
@@ -106,6 +168,6 @@ Every command:
 
 List commands stream pages as they arrive and stop at the configured record and page limits. Optional embeds remain opt-in because they consume additional Freshservice API credits.
 
-## 7. Export rule
+## 8. Export rule
 
 The module exports exactly the 22 commands in this reference and no generated aliases. Two of them are provisional until Phase 1 sandbox evidence lands: `Search-FreshServiceApproval` (`OPEN_QUESTIONS.md` Q8) and `Get-FreshServiceAssetAssignmentHistory` (Q9) are removed, reducing the count, if the tenant cannot support their endpoints. CSAT remains conditional rather than committed, and time entries remain out of scope. Other Freshservice API operations are outside the app's supported public surface.

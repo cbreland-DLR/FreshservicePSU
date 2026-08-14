@@ -34,7 +34,7 @@ BeforeAll {
         Get-DocumentedCommand `
             -Path (Join-Path $repositoryRoot 'docs/SUPPORTED_COMMANDS.md') `
             -StartHeading '^## 1\. Ticket operations$' `
-            -EndHeading '^## 5\. Contract shared by every command$'
+            -EndHeading '^## 6\. Accepted field, lookup, and embed contracts$'
     ) | Sort-Object -Unique
 
     $planCommands = @(
