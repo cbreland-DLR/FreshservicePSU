@@ -221,7 +221,29 @@ The allowed top-level properties are `SchemaVersion`, `Stage`, `Tenant`,
 `Authentication` accepts only `AllowedTypes`, `TrustedTenants`, and
 `TrustedIssuers`. Unknown properties, unsupported schema versions, duplicate or
 case-colliding user keys, non-HTTPS base URIs, and base URIs outside
-`/api/v2/` fail validation. The adapter reads and validates the variable at the
+`/api/v2/` fail validation.
+
+**Accepted validation rules.** Four rules are fixed here because a validator is
+the wrong place for them to be discovered:
+
+- **`BaseUri` is bound to the tenant.** Its host must equal
+  `<Tenant>.freshservice.com` and its path must be exactly `/api/v2/`. An
+  exact-path check alone still accepts `https://attacker.example.com/api/v2/`,
+  which would direct every authenticated request at another host. The tenant
+  is on the standard Freshservice domain; a vanity domain would require an
+  explicit new configuration property rather than a looser check.
+- **`BaseUri` carries no userinfo, query, or fragment.** Userinfo smuggles
+  credentials into a URI, and a query or fragment silently alters every
+  request built from the base.
+- **`AllowedTypes` is a closed set of `SAML` and `OIDC`.** These are the
+  mechanisms the module implements (see the rollout section below). A typo or
+  an unimplemented mechanism fails at configuration validation rather than
+  reading as valid configuration that grants nothing.
+- **Property names must be unique case-insensitively at every level**, not
+  only in `Users`. A case-sensitive dictionary can hold both `Stage` and
+  `stage`; only one is ever read, so the configuration is ambiguous and fails.
+
+The adapter reads and validates the variable at the
 start of every public operation; configuration is not cached, so an
 administrator's stage, tenant, issuer, or secret-reference correction takes
 effect without recycling a runspace. Configuration integrity is

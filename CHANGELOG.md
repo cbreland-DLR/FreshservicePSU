@@ -36,6 +36,22 @@ this fork are recorded above the inherited history.
 - Offline test lanes (`tests/Unit`, `tests/Contract`, `tests/Architecture`) and
   architecture checks enforcing the naming boundary, forbidden runtime APIs,
   transport confined to `Private/Http`, and documentation alignment.
+- Configuration validation (`Test-FsuConfiguration`) and the `Freshservice.Configuration`
+  contract defined in ARCHITECTURE.md §7.
+- Error normalization (`ConvertTo-FsuNormalizedError`), error construction
+  (`New-FsuErrorRecord`), and response envelope (`New-FsuResponse`) contracts;
+  20 documented Freshservice error codes and 10 HTTP statuses map to stable
+  normalized ErrorCategory and FullyQualifiedErrorId.
+- Retry policy (`New-FsuRetryPolicy` and `Get-FsuRetryDecision`) enforcing the
+  ARCHITECTURE.md §11 budget rule under injectable clock; pure, testable decision
+  logic with no side effects.
+- Audit event construction (`New-FsuAuditEvent`) and emission (`Write-FsuAuditEvent`)
+  from a closed 12-field allowlist; events tagged `FreshservicePSU.Audit` on the
+  information stream only, never in success output.
+- Unit tests for each of the above contracts. The identity and
+  credential-selection half of Phase 3 — the PSU host adapter, credential
+  lookup, and per-operation context creation — is not implemented yet, so the
+  module still exports no commands.
 
 ### Planned breaking release
 

@@ -189,6 +189,20 @@ Delete in the same change as the command removal:
 
 ## 7. Phase 3 — Core security and execution contracts
 
+### Implementation status
+
+As of 2026-08-13, the identity-independent contracts have been implemented and
+unit-tested: `Test-FsuConfiguration` validates the configuration contract;
+`ConvertTo-FsuNormalizedError` and `New-FsuErrorRecord` handle error normalization
+and construction; `New-FsuResponse` provides the response metadata envelope;
+`New-FsuRetryPolicy` and `Get-FsuRetryDecision` implement retry policy with
+testable, injectable-clock decision logic; and `New-FsuAuditEvent` and
+`Write-FsuAuditEvent` emit audit events from a closed allowlist to the tagged
+information stream. Five new unit-test files document these contracts; the
+offline suite now contains 196 passing tests and 2 skipped. The identity,
+credential-selection, and fail-closed PSU-adapter deliverables remain blocked on
+Q1 and Q2. The phase is not complete and its exit criteria are unmet.
+
 ### Deliverables
 
 Define immutable internal contracts for:
