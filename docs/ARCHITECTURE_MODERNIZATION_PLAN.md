@@ -37,12 +37,19 @@ The modernization documentation is split by purpose so architectural decisions, 
    The operator-facing installation, configuration, identity, smoke-test,
    upgrade, and rollback procedure derived from the architecture.
 
+9. [PowerShell best practices](POWERSHELL_BEST_PRACTICES.md)
+
+   Project-wide implementation, security, testing, stream, and style guidance
+   derived from the architecture. It does not override product behavior or
+   resolve an open question.
+
 ## Reading order
 
 - Read the architecture first when making or reviewing a design decision.
 - Use the supported command reference for the public surface and behavior.
 - Use the open-question registry before assuming a deployment fact or unresolved command detail.
 - Use the implementation plan to choose and execute the next phase.
+- Follow the PowerShell best-practices guide while implementing any phase.
 - Consult the prune list for command removal decisions and the current-state review only for legacy evidence.
 
 If documents conflict, use the authority stated above and correct the lower-authority document in the same change. Generated help and the module manifest must match the supported command reference before release.

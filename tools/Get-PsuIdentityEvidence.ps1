@@ -13,11 +13,11 @@
     NOTHING SENSITIVE IS WRITTEN TO THE OUTPUT. Claim values are never
     recorded. For each claim the script records its type URI, issuer, value
     kind (Guid / Email / Uri / Other), value length, and an 8-character
-    fingerprint derived from a salted SHA-256 of the value. The fingerprint is
-    stable within one run, so two users can be compared to confirm they
-    normalize differently, and it is useless outside that run because the salt
-    is random per invocation. Assertions, ID tokens, access tokens, secrets,
-    and raw claim values never enter the output.
+    fingerprint derived from a salted SHA-256 of the value. The default salt is
+    random per invocation. Pass the same temporary ComparisonSecret to a
+    controlled set of runs only when cross-report comparison is required.
+    Assertions, ID tokens, access tokens, secrets, and raw claim values never
+    enter the output.
 
     Run it once per surface. Deploy the same file as an API endpoint, an App
     page, and a scheduled script; each run reports which surface it detected.
@@ -32,17 +32,35 @@
     'Schedule-System'. Use it to tell runs apart when comparing surfaces or
     two different users.
 
+.PARAMETER ComparisonSecret
+    Optional temporary secret used as the fingerprint salt. Supply the same
+    value to User A/User B or SAML/OIDC runs that must be compared, then delete
+    it. The value is never written to the report. Without this parameter,
+    fingerprints are comparable only within one report.
+
 .PARAMETER RunSharedStateTest
     Opt-in. Probes Q15 by taking an OS-named mutex and writing one entry to
     PSU's server-level cache under a key prefixed 'FsuEvidence.'. This is the
-    only write the script performs; it removes the entry afterwards. Omit this
-    switch to keep the run strictly read-only.
+    only mode that writes. It requires SharedStateProbeId and SharedStateRole.
+
+.PARAMETER SharedStateProbeId
+    A non-secret label shared by every process in one Q15 probe. It is hashed
+    before being used in the cache key or mutex name and is not written to the
+    report.
+
+.PARAMETER SharedStateRole
+    Initializer writes count one while holding the mutex. Contender must start
+    while Initializer holds it and advances the same cache state to count two.
+    RestartSeed leaves a marker before a PSU restart; RestartCheck confirms
+    whether it survived. Cleanup removes a failed or completed probe entry.
 
 .EXAMPLE
     ./Get-PsuIdentityEvidence.ps1 -SurfaceLabel 'API-SAML-UserA'
 
 .EXAMPLE
-    ./Get-PsuIdentityEvidence.ps1 -SurfaceLabel 'Schedule-System' -RunSharedStateTest
+    ./Get-PsuIdentityEvidence.ps1 -SurfaceLabel 'Limiter-ProcessA' `
+        -RunSharedStateTest -SharedStateProbeId 'q15-20260813' `
+        -SharedStateRole Initializer
 #>
 [CmdletBinding()]
 param(
@@ -51,15 +69,42 @@ param(
     [Parameter(Mandatory)]
     [string]$SurfaceLabel,
 
-    [switch]$RunSharedStateTest
+    [securestring]$ComparisonSecret,
+
+    [switch]$RunSharedStateTest,
+
+    [ValidateSet('Initializer', 'Contender', 'RestartSeed', 'RestartCheck', 'Cleanup')]
+    [string]$SharedStateRole,
+
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$')]
+    [string]$SharedStateProbeId,
+
+    [ValidateRange(2, 15)]
+    [int]$MutexHoldSeconds = 5
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# Random per run: fingerprints can be compared within one report, and carry no
-# meaning outside it. This is what makes recording claim shape safe.
+# Random per run by default. An operator can deliberately reuse a temporary,
+# unreported secret across the small set of reports that must be compared.
 $script:Salt = [guid]::NewGuid().ToString()
+$comparisonFingerprintsEnabled = $false
+if ($ComparisonSecret) {
+    $comparisonBstr = [IntPtr]::Zero
+    try {
+        $comparisonBstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($ComparisonSecret)
+        $script:Salt = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($comparisonBstr)
+        if ($script:Salt.Length -lt 16) {
+            throw 'ComparisonSecret must contain at least 16 characters.'
+        }
+        $comparisonFingerprintsEnabled = $true
+    } finally {
+        if ($comparisonBstr -ne [IntPtr]::Zero) {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($comparisonBstr)
+        }
+    }
+}
 
 function Get-Fingerprint {
     param([string]$Value)
@@ -68,6 +113,14 @@ function Get-Fingerprint {
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($script:Salt + $Value)
     $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
     return -join ($hash[0..3] | ForEach-Object { $_.ToString('x2') })
+}
+
+function Get-StableHash {
+    param([Parameter(Mandatory)][string]$Value)
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Value)
+    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    return -join ($hash[0..7] | ForEach-Object { $_.ToString('x2') })
 }
 
 function Get-ValueKind {
@@ -110,7 +163,7 @@ function Get-VariableEvidence {
     }
 }
 
-Write-Host "Collecting PSU identity evidence for surface '$SurfaceLabel'..." -ForegroundColor Cyan
+Write-Information "Collecting PSU identity evidence for surface '$SurfaceLabel'..." -InformationAction Continue
 
 # --- Q3: runtime facts ----------------------------------------------------
 $runtime = [ordered]@{
@@ -206,45 +259,115 @@ if ($null -ne $claimsVariable -and $null -ne $claimsVariable.Value) {
 # --- Q15: cross-process coordination (opt-in; the only write) -------------
 $sharedState = [ordered]@{ Ran = $false; Note = 'Skipped. Pass -RunSharedStateTest to probe Q15.' }
 if ($RunSharedStateTest) {
-    $mutexName = 'Global\FsuEvidence.LimiterProbe'
-    $cacheKey = "FsuEvidence.Probe.$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+    if ([string]::IsNullOrWhiteSpace($SharedStateProbeId) -or [string]::IsNullOrWhiteSpace($SharedStateRole)) {
+        throw 'RunSharedStateTest requires SharedStateProbeId and SharedStateRole.'
+    }
+
+    $probeHash = Get-StableHash -Value $SharedStateProbeId
+    $mutexLeaf = "FsuEvidence.LimiterProbe.$probeHash"
+    $mutexName = if ($IsWindows) { "Global\$mutexLeaf" } else { $mutexLeaf }
+    $cacheKey = "FsuEvidence.Probe.$probeHash"
     $mutex = $null
     $acquired = $false
-    try {
-        $mutex = [System.Threading.Mutex]::new($false, $mutexName)
-        $acquired = $mutex.WaitOne([TimeSpan]::FromSeconds(10))
+    $waitTimer = [System.Diagnostics.Stopwatch]::new()
+    $cacheAvailable = $null -ne (Get-Command -Name 'Set-PSUCache' -ErrorAction SilentlyContinue) -and
+    $null -ne (Get-Command -Name 'Get-PSUCache' -ErrorAction SilentlyContinue) -and
+    $null -ne (Get-Command -Name 'Remove-PSUCache' -ErrorAction SilentlyContinue)
+    $workerProcesses = @(Get-Process -Name 'Universal*', 'PowerShellUniversal*' -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty Id)
 
-        $cacheAvailable = $null -ne (Get-Command -Name 'Set-PSUCache' -ErrorAction SilentlyContinue)
-        $roundTripped = $null
-        if ($cacheAvailable) {
-            $token = [guid]::NewGuid().ToString()
-            Set-PSUCache -Key $cacheKey -Value $token -Integrated
-            $roundTripped = ((Get-PSUCache -Key $cacheKey -Integrated) -eq $token)
+    $sharedState = [ordered]@{
+        Ran = $true
+        Role = $SharedStateRole
+        ProbeHash = $probeHash
+        CacheCmdletsAvailable = $cacheAvailable
+        MutexName = $mutexName
+        MutexAcquired = $false
+        MutexWaitMilliseconds = $null
+        CacheVisibleBeforeMutex = $null
+        CounterBefore = $null
+        CounterAfter = $null
+        ObservedInitializerState = $null
+        CacheRoundTripSucceeded = $null
+        CachePersistedAfterRestart = $null
+        CleanupSucceeded = $null
+        ObservedProcessId = $PID
+        CandidateWorkerProcessIds = $workerProcesses
+        CandidateWorkerProcessCount = $workerProcesses.Count
+        ErrorType = $null
+    }
+
+    try {
+        if (-not $cacheAvailable) {
+            throw 'The integrated PSU cache commands are unavailable on this execution surface.'
         }
 
-        $workerProcesses = @(Get-Process -Name 'Universal*', 'PowerShellUniversal*' -ErrorAction SilentlyContinue |
-                Select-Object -ExpandProperty Id)
+        if ($SharedStateRole -eq 'Cleanup') {
+            Remove-PSUCache -Key $cacheKey -Integrated -ErrorAction SilentlyContinue
+            $sharedState.CleanupSucceeded = $null -eq (Get-PSUCache -Key $cacheKey -Integrated)
+        } elseif ($SharedStateRole -eq 'RestartCheck') {
+            $restartState = Get-PSUCache -Key $cacheKey -Integrated
+            $sharedState.CachePersistedAfterRestart = $null -ne $restartState
+            Remove-PSUCache -Key $cacheKey -Integrated -ErrorAction SilentlyContinue
+            $sharedState.CleanupSucceeded = $null -eq (Get-PSUCache -Key $cacheKey -Integrated)
+        } else {
+            $beforeMutex = Get-PSUCache -Key $cacheKey -Integrated
+            $sharedState.CacheVisibleBeforeMutex = $null -ne $beforeMutex
 
-        $sharedState = [ordered]@{
-            Ran = $true
-            MutexName = $mutexName
-            MutexAcquired = $acquired
-            CacheCmdletsAvailable = $cacheAvailable
-            CacheRoundTripSucceeded = $roundTripped
-            ObservedProcessId = $PID
-            CandidateWorkerProcessIds = $workerProcesses
-            CandidateWorkerProcessCount = $workerProcesses.Count
-            Note = 'Run this concurrently from two worker processes and compare MutexAcquired timing and the shared cache value to satisfy Q15.'
+            $mutex = [System.Threading.Mutex]::new($false, $mutexName)
+            $waitTimer.Start()
+            $acquired = $mutex.WaitOne([TimeSpan]::FromSeconds($MutexHoldSeconds + 10))
+            $waitTimer.Stop()
+            $sharedState.MutexAcquired = $acquired
+            $sharedState.MutexWaitMilliseconds = $waitTimer.ElapsedMilliseconds
+            if (-not $acquired) {
+                throw 'Timed out acquiring the shared-state evidence mutex.'
+            }
+
+            if ($SharedStateRole -in @('Initializer', 'RestartSeed')) {
+                $token = [guid]::NewGuid().ToString()
+                $state = [ordered]@{
+                    SchemaVersion = '1.0'
+                    Role = $SharedStateRole
+                    Token = $token
+                    Counter = 1
+                    ProcessId = $PID
+                    WrittenUtc = [datetime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
+                }
+                Set-PSUCache -Key $cacheKey -Value $state -Integrated
+                $readBack = Get-PSUCache -Key $cacheKey -Integrated
+                $sharedState.CounterAfter = if ($readBack) { [int]$readBack.Counter } else { $null }
+                $sharedState.CacheRoundTripSucceeded = $null -ne $readBack -and $readBack.Token -eq $token
+                if ($SharedStateRole -eq 'Initializer') {
+                    Start-Sleep -Seconds $MutexHoldSeconds
+                }
+            } else {
+                $current = Get-PSUCache -Key $cacheKey -Integrated
+                $sharedState.ObservedInitializerState = $null -ne $beforeMutex -and $null -ne $current -and
+                $beforeMutex.Token -eq $current.Token -and $current.Role -eq 'Initializer'
+                if (-not $sharedState.ObservedInitializerState) {
+                    throw 'Contender did not observe state written by Initializer.'
+                }
+
+                $sharedState.CounterBefore = [int]$current.Counter
+                $current.Counter = $sharedState.CounterBefore + 1
+                $current.Role = 'Contender'
+                $current.ProcessId = $PID
+                Set-PSUCache -Key $cacheKey -Value $current -Integrated
+                $readBack = Get-PSUCache -Key $cacheKey -Integrated
+                $sharedState.CounterAfter = if ($readBack) { [int]$readBack.Counter } else { $null }
+                $sharedState.CacheRoundTripSucceeded = $null -ne $readBack -and
+                $readBack.Token -eq $current.Token -and $readBack.Counter -eq 2
+            }
         }
     } catch {
-        $sharedState = [ordered]@{ Ran = $true; Error = $_.Exception.Message }
+        $sharedState.ErrorType = $_.Exception.GetType().FullName
     } finally {
         if ($acquired -and $null -ne $mutex) { $mutex.ReleaseMutex() }
         if ($null -ne $mutex) { $mutex.Dispose() }
-        if (Get-Command -Name 'Remove-PSUCache' -ErrorAction SilentlyContinue) {
-            Remove-PSUCache -Key $cacheKey -Integrated -ErrorAction SilentlyContinue
-        }
     }
+} elseif ($SharedStateRole -or $SharedStateProbeId) {
+    throw 'SharedStateRole and SharedStateProbeId are valid only with RunSharedStateTest.'
 }
 
 # --- Report ---------------------------------------------------------------
@@ -260,8 +383,10 @@ $report = [ordered]@{
     ClaimSummary = $claimSummary
     Claims = $claims
     SharedState = $sharedState
-    SanitizationNote = 'Claim and identity values are never recorded. Fingerprints are salted per run and comparable only within this report.'
+    ComparisonFingerprintsEnabled = $comparisonFingerprintsEnabled
+    SanitizationNote = 'Claim and identity values and the comparison secret are never recorded. Fingerprints are cross-report comparable only when the same temporary ComparisonSecret was supplied.'
 }
+$script:Salt = $null
 
 if (-not $OutputPath) {
     $stamp = [datetime]::UtcNow.ToString('yyyyMMdd-HHmmss')
@@ -271,13 +396,13 @@ if (-not $OutputPath) {
 
 $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $OutputPath -Encoding utf8NoBOM
 
-Write-Host ''
-Write-Host "Surface detected : $detectedSurface" -ForegroundColor Green
-Write-Host "ClaimsPrincipal  : $claimsPrincipalPresent"
-Write-Host "Claims found     : $($claims.Count)"
-Write-Host "PowerShell       : $($runtime.PowerShellVersion) on $($runtime.OSDescription)"
-Write-Host "Report written   : $OutputPath" -ForegroundColor Green
-Write-Host ''
-Write-Host 'Review the file before sharing it. It should contain no claim values.' -ForegroundColor Yellow
+Write-Information '' -InformationAction Continue
+Write-Information "Surface detected : $detectedSurface" -InformationAction Continue
+Write-Information "ClaimsPrincipal  : $claimsPrincipalPresent" -InformationAction Continue
+Write-Information "Claims found     : $($claims.Count)" -InformationAction Continue
+Write-Information "PowerShell       : $($runtime.PowerShellVersion) on $($runtime.OSDescription)" -InformationAction Continue
+Write-Information "Report written   : $OutputPath" -InformationAction Continue
+Write-Information '' -InformationAction Continue
+Write-Information 'Review the file before sharing it. It should contain no claim values.' -InformationAction Continue
 
 $report

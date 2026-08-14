@@ -18,6 +18,11 @@ contract. Backward compatibility with the legacy
 module is not a goal for the next major version. Do not use the development
 branch for critical automation.
 
+The evidence-collection tooling needed for the remaining PSU and Freshservice
+sandbox questions is complete and tested. The next action is for operators to
+run the matrices in [tools/README.md](tools/README.md); no further module slice
+is startable until the current SAML identity evidence is reviewed.
+
 For where the work stands and what happens next, see
 [Current position and next steps](docs/IMPLEMENTATION_PLAN.md#1a-current-position-and-next-steps).
 
@@ -92,6 +97,7 @@ are implemented.
 - [Supported command reference](docs/SUPPORTED_COMMANDS.md)
 - [Command prune decision](docs/COMMAND_PRUNE_LIST.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [PowerShell best practices](docs/POWERSHELL_BEST_PRACTICES.md)
 - [Open questions](docs/OPEN_QUESTIONS.md)
 - [PowerShell Universal setup](docs/PSU_SETUP.md)
 - [Current-state review](docs/CURRENT_STATE_REVIEW.md)
@@ -104,11 +110,18 @@ removing them.
 
 ## Testing
 
-The inherited resource tests are live-tenant integration tests. Many create,
-modify, or delete Freshservice records and are not safe as a default CI suite.
-Do not run the full suite against production. Offline unit and contract tests,
-static-analysis policy, and isolated live-test lanes are planned as part of the
-modernization.
+The default validation gate is offline and includes unit, contract,
+architecture, documentation, analyzer, manifest, and clean-import checks.
+Operator evidence tools have a separate mocked offline gate:
+
+```powershell
+./build.ps1 -Task Validate,Tools
+```
+
+Credentialed PSU and Freshservice evidence runs remain explicit and opt-in.
+The Freshservice note-authorship probe creates notes and must be used only with
+the documented acknowledgement on disposable sandbox tickets; never run it
+against production.
 
 See [CONTRIBUTING.md](.github/CONTRIBUTING.md) before submitting a change.
 

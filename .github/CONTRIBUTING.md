@@ -22,6 +22,8 @@ shared transport, authentication, connection, or output behavior. Use the
 document authority and check [open questions](../docs/OPEN_QUESTIONS.md) before
 assuming an unresolved deployment or endpoint fact. The
 [current-state review](../docs/CURRENT_STATE_REVIEW.md) is legacy evidence only.
+Follow the [PowerShell best practices](../docs/POWERSHELL_BEST_PRACTICES.md) for
+all module, test, build, and operator-tool changes.
 
 ## Making a change
 
@@ -44,6 +46,12 @@ Invoke-Pester -Path ./tests/Documentation.Tests.ps1
 Use `./build.ps1 -Task Validate -Bootstrap` only when you intend to install the
 pinned build dependencies for the current user. Credentialed PSU and live
 Freshservice tests are separate and opt-in.
+
+When operator tooling changes, run its separate offline gate as well:
+
+```powershell
+./build.ps1 -Task Validate,Tools
+```
 
 The inherited resource suite connects to a live tenant and performs mutations.
 Never run it against production. A pull request must state exactly which tests

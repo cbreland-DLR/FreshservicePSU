@@ -30,12 +30,23 @@ this fork are recorded above the inherited history.
   config-file read, no global variables, no banner.
 - The manifest exports nothing and no longer wildcards aliases, variables, or
   cmdlets.
+- The PSU limiter evidence probe now uses a shared cache key, measurable
+  cross-process mutex contention, explicit cleanup, and pre/post-restart roles
+  so Q15 can be answered conclusively.
 
 ### Added
 
 - `tools/Get-PsuIdentityEvidence.ps1`: operator tooling outside the module
   for collecting sanitized identity and deployment evidence. Reports are
   not committed. See `tools/README.md` for the run matrix and instructions.
+- `tools/Get-FreshserviceSandboxEvidence.ps1`: guarded sandbox probes for note
+  authorship, approval search, asset assignment history, pagination, and the
+  correlation header without recording credentials or response values.
+- `tools/ConvertFrom-FsuEvidenceReport.ps1`: closed-schema conversion of raw
+  evidence JSON into temporary, review-only Markdown; it never edits the open
+  question registry or declares a conclusion.
+- A separate `./build.ps1 -Task Tools` gate with mocked offline tests for
+  operator-tool syntax, formatting, analysis, sanitization, and safety guards.
 - Offline test lanes (`tests/Unit`, `tests/Contract`, `tests/Architecture`) and
   architecture checks enforcing the naming boundary, forbidden runtime APIs,
   transport confined to `Private/Http`, and documentation alignment.

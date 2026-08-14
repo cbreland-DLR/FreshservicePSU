@@ -47,7 +47,7 @@ Two things this does not mean:
 - `FreshservicePSU/Private/` — shared target internals; all HTTP goes through the new request pipeline.
 - `FreshservicePSU/FreshservicePSU.psd1` — explicit exports, validated against the accepted inventory.
 - `tests/` — offline unit and contract tests by default; credentialed PSU and live tests are separate.
-- `tools/` — operator tooling outside the module; not exported and not covered by `build.ps1`.
+- `tools/` — operator tooling outside the module; not exported and checked separately with `./build.ps1 -Task Tools`.
 - `docs/en-US/` — generated help for supported commands only. Does not exist yet; Phase 2 deleted the inherited topics and Phase 5 regenerates them per command.
 - `docs/PSU_SETUP.md` — operator installation, configuration, identity, validation, upgrade, and rollback guide.
 - `SECURITY.md` — private vulnerability reporting and secret-handling policy.
@@ -61,6 +61,8 @@ commit as any change to phase status.
 
 ## Conventions
 
+- Follow `docs/POWERSHELL_BEST_PRACTICES.md` for module, test, build, and
+  operator-tool implementation.
 - Command names use `FreshService`; the target module exports no generated aliases.
 - Public commands use focused PowerShell parameters and one operation/resource shape per command. Shared internals perform transport and serialization.
 - Every function under `Private/` matches `^[A-Z][a-zA-Z]*-Fsu[A-Z]`, checked case-sensitively. No `FreshService` in a private name, no `Fsu` in a public one. `tests/Architecture/Naming.Tests.ps1` enforces this.

@@ -31,7 +31,9 @@ reconstruct the position from the phase table.
 (configuration validation, retry policy, response and normalized errors, audit
 events). The four Phase 4 deliverables that need no identity or limiter
 evidence (`New-FsuUri`, `ConvertTo-FsuRequestBody`, `ConvertFrom-FsuResponse`,
-and the limiter provider interface with its in-memory provider).
+and the limiter provider interface with its in-memory provider). Sanitized PSU
+and Freshservice evidence probes, a review-only Markdown converter, and their
+separate offline quality gate are also complete.
 
 **Not started and not startable:** everything else. The module exports zero
 commands. No public command exists, and none can be built until the request
@@ -42,11 +44,11 @@ There is no remaining implementation work that does not depend on it:
 
 | # | Action | Owner | Unblocks |
 | --- | --- | --- | --- |
-| 1 | Run `tools/Get-PsuIdentityEvidence.ps1` for the eight runs in `tools/README.md` against the PSU instance | PSU operator | Q1, Q2, Q3, Q15 |
-| 2 | Fold the sanitized results into `OPEN_QUESTIONS.md` and close what they answer | Maintainer | — |
+| 1 | Run the documented identity and Q15 matrix with `tools/Get-PsuIdentityEvidence.ps1` against the PSU instance | PSU operator | Q1, Q2, Q3, Q15 |
+| 2 | Generate review-only Markdown with `tools/ConvertFrom-FsuEvidenceReport.ps1`, then fold confirmed conclusions into `OPEN_QUESTIONS.md` | Maintainer | — |
 | 3 | Build the Phase 3 identity adapter, credential selection, and context creation | Maintainer | Phase 3 completion |
 | 4 | Build `Invoke-FsuRequest` and `Invoke-FsuPagedRequest` on the finished contracts | Maintainer | Phase 4, then Phase 5 slices |
-| 5 | Run the Freshservice sandbox spikes: note authorship, Q8 and Q9 availability, correlation header | Maintainer with sandbox | Q7, Q8, Q9; Phase 6 |
+| 5 | Run the documented `tools/Get-FreshserviceSandboxEvidence.ps1` matrix for note authorship, Q8/Q9 availability, pagination, and the correlation header | Maintainer with sandbox | Q7, Q8, Q9; Phase 6 |
 
 Steps 1 and 5 are independent of each other and can run in either order. Step 5
 can change the exported command count: Q8 and Q9 each gate one command, so a
@@ -165,13 +167,14 @@ This phase records facts from the PSU test instance and Freshservice sandbox. It
 - Run the note-authorship sandbox spike with and without `user_id`. Record authorship, required privilege, and Freshservice audit behavior.
 - Decide whether a correlation ID remains audit-only or is also accepted as an outbound header after a sandbox test.
 
-The PSU half of this evidence has a collection tool at
-`tools/Get-PsuIdentityEvidence.ps1`, with a run matrix and operator
-instructions in `tools/README.md`. It covers Q1, Q2, Q3, and Q15 and needs an
-operator to run it against the instance; nothing remains to be built for it.
-The Freshservice sandbox deliverables above — note authorship, the Q8 and Q9
-availability checks, and the correlation-header test — are separate work that
-this tool does not cover.
+The PSU half uses `tools/Get-PsuIdentityEvidence.ps1` for Q1, Q2, Q3, and Q15.
+The Freshservice half uses `tools/Get-FreshserviceSandboxEvidence.ps1` for note
+authorship, Q8/Q9 availability and pagination, and the correlation header.
+`tools/ConvertFrom-FsuEvidenceReport.ps1` converts either sanitized report
+schema into review-only Markdown without editing authoritative documents. The
+complete matrices, safety rules, and cleanup procedure are in
+`tools/README.md`; the tools are complete and now need operators to run them
+against the PSU instance and disposable Freshservice sandbox records.
 
 ### Exit criteria
 
@@ -237,8 +240,9 @@ and construction; `New-FsuResponse` provides the response metadata envelope;
 `New-FsuRetryPolicy` and `Get-FsuRetryDecision` implement retry policy with
 testable, injectable-clock decision logic; and `New-FsuAuditEvent` and
 `Write-FsuAuditEvent` emit audit events from a closed allowlist to the tagged
-information stream. Five new unit-test files document these contracts; the
-offline suite now contains 196 passing tests and 2 skipped. The identity,
+information stream. Focused unit tests document these contracts. The normal
+offline validation gate now contains 270 passing tests and 2 skipped; the
+separate operator-tool gate contains another 12 passing mocked tests. The identity,
 credential-selection, and fail-closed PSU-adapter deliverables remain blocked on
 Q1 and Q2. The phase is not complete and its exit criteria are unmet.
 
@@ -519,6 +523,7 @@ Documentation is a phase deliverable, not a release task. It changes in the same
 | A command is removed | Delete its help topic, tests, and examples in the same change; record the removal in `COMMAND_PRUNE_LIST.md` and the release notes | Help-topic set equals the exported command set; no non-evidence file references a removed name |
 | Legacy evidence | `CURRENT_STATE_REVIEW.md` and `API_V2_COVERAGE_MATRIX.md` | Review only; these are evidence documents and never define target behavior |
 | Vulnerability reporting or secret-handling policy | `SECURITY.md` | Review and relative-link tests |
+| Project-wide PowerShell implementation or quality practice | `POWERSHELL_BEST_PRACTICES.md` | `Validate` or `Tools`, depending on the affected code |
 
 Additional rules:
 

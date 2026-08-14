@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('Test', 'Analyze', 'Format', 'Build', 'Validate', 'Clean')]
+    [ValidateSet('Test', 'Analyze', 'Format', 'Build', 'Validate', 'Tools', 'Clean')]
     [string[]]$Task = @('Test'),
 
     [switch]$Bootstrap,
@@ -54,15 +54,28 @@ function Import-BuildDependency {
 }
 
 function Test-PowerShellSyntax {
-    $parseErrors = foreach ($path in @($moduleRoot, (Join-Path $PSScriptRoot 'tests'), $PSCommandPath)) {
-        $files = if (Test-Path -Path $path -PathType Leaf) {
-            Get-Item -Path $path
+    param(
+        [string[]]$Path,
+        [switch]$IncludeToolTests
+    )
+
+    if (-not $Path) {
+        $Path = @($moduleRoot, (Join-Path $PSScriptRoot 'tests'), $PSCommandPath)
+    }
+
+    $toolTestPattern = '[\\/]tests[\\/]Tools(?:[\\/]|$)'
+    $parseErrors = foreach ($pathItem in $Path) {
+        $files = if (Test-Path -Path $pathItem -PathType Leaf) {
+            Get-Item -Path $pathItem
         } else {
-            Get-ChildItem -Path $path -Recurse -File |
+            Get-ChildItem -Path $pathItem -Recurse -File |
                 Where-Object Extension -In @('.ps1', '.psm1', '.psd1')
         }
 
         foreach ($file in $files) {
+            if (-not $IncludeToolTests -and $file.FullName -match $toolTestPattern) {
+                continue
+            }
             $tokens = $null
             $errors = $null
             [void][System.Management.Automation.Language.Parser]::ParseFile(
@@ -132,7 +145,31 @@ function Invoke-OfflineTests {
     }
 }
 
+function Invoke-ToolTests {
+    Import-BuildDependency -Name Pester
+
+    $configuration = New-PesterConfiguration
+    $configuration.Run.Path = Join-Path -Path $PSScriptRoot -ChildPath 'tests/Tools'
+    $configuration.Run.PassThru = $true
+    $configuration.Output.Verbosity = 'Normal'
+    $configuration.Filter.ExcludeTag = @('Network')
+
+    $result = Invoke-Pester -Configuration $configuration
+    if ($result.FailedCount -gt 0 -or $result.Result -ne 'Passed') {
+        throw "Tool tests failed with result '$($result.Result)' and $($result.FailedCount) test failure(s)."
+    }
+}
+
 function Invoke-FormatCheck {
+    param(
+        [string[]]$Path,
+        [switch]$IncludeToolTests
+    )
+
+    if (-not $Path) {
+        $Path = @($moduleRoot, (Join-Path $PSScriptRoot 'tests'))
+    }
+
     Import-BuildDependency -Name PSScriptAnalyzer
 
     # A dedicated formatting settings hashtable, not
@@ -181,7 +218,11 @@ function Invoke-FormatCheck {
         }
     }
 
-    $drifted = foreach ($file in Get-ChildItem -Path $moduleRoot, (Join-Path $PSScriptRoot 'tests') -Recurse -File) {
+    $toolTestPattern = '[\\/]tests[\\/]Tools(?:[\\/]|$)'
+    $drifted = foreach ($file in Get-ChildItem -Path $Path -Recurse -File) {
+        if (-not $IncludeToolTests -and $file.FullName -match $toolTestPattern) {
+            continue
+        }
         if ($file.Extension -notin @('.ps1', '.psm1')) {
             # .psd1 data files are excluded: PSUseConsistentIndentation has a
             # known quirk of wanting the top-level hashtable's closing brace
@@ -251,9 +292,22 @@ foreach (`$item in `$information) { `$streamOutput.Add("Information: `$item") }
 }
 
 function Invoke-StaticAnalysis {
+    param(
+        [string[]]$Path,
+        [switch]$IncludeToolTests
+    )
+
+    if (-not $Path) {
+        $Path = @($moduleRoot, (Join-Path $PSScriptRoot 'tests'))
+    }
+
     Import-BuildDependency -Name PSScriptAnalyzer
 
-    $diagnostics = foreach ($file in Get-ChildItem -Path $moduleRoot, (Join-Path $PSScriptRoot 'tests') -Recurse -File) {
+    $toolTestPattern = '[\\/]tests[\\/]Tools(?:[\\/]|$)'
+    $diagnostics = foreach ($file in Get-ChildItem -Path $Path -Recurse -File) {
+        if (-not $IncludeToolTests -and $file.FullName -match $toolTestPattern) {
+            continue
+        }
         if ($file.Extension -in @('.ps1', '.psm1', '.psd1')) {
             try {
                 Invoke-ScriptAnalyzer -Path $file.FullName -Settings $analyzerSettingsPath -ErrorAction Stop
@@ -313,6 +367,16 @@ foreach ($taskName in $Task) {
             Invoke-FormatCheck
             Invoke-StaticAnalysis
             Invoke-OfflineTests
+        }
+        'Tools' {
+            $toolPaths = @(
+                (Join-Path $PSScriptRoot 'tools')
+                (Join-Path $PSScriptRoot 'tests/Tools')
+            )
+            Test-PowerShellSyntax -Path $toolPaths -IncludeToolTests
+            Invoke-FormatCheck -Path $toolPaths -IncludeToolTests
+            Invoke-StaticAnalysis -Path $toolPaths -IncludeToolTests
+            Invoke-ToolTests
         }
         'Clean' {
             if (Test-Path -Path $OutputPath) {
