@@ -163,7 +163,7 @@ Build the target module without carrying the legacy runtime or command loader fo
 - Establish an explicit manifest export list that grows only when a command meets its phase exit criteria.
 - Add an expected-command inventory test against the accepted 22-command catalog, while permitting a documented implementation subset until Phase 6 completes.
 - Configure PSScriptAnalyzer, formatting, `Test-ModuleManifest`, import, unit, and contract-test lanes on the supported PowerShell 7.6 operating system.
-- Add the naming-boundary architecture check from `ARCHITECTURE.md` §12: `Private/` functions match `^[A-Z][a-z]+-Fsu[A-Z]` and never contain `FreshService`, `Public/` functions never contain `Fsu`, and `AliasesToExport`, `VariablesToExport`, and `CmdletsToExport` are empty. This must exist before Phase 4 writes the pipeline helpers.
+- Add the naming-boundary architecture check from `ARCHITECTURE.md` §12: `Private/` functions match `^[A-Z][a-zA-Z]*-Fsu[A-Z]` case-sensitively and never contain `FreshService`, `Public/` functions never contain `Fsu`, and `AliasesToExport`, `VariablesToExport`, and `CmdletsToExport` are empty. This must exist before Phase 4 writes the pipeline helpers.
 - Add architecture checks rejecting `Desktop`, versions below 7.6, `UseBasicParsing`, `ServicePointManager`, `System.Web`, direct public-command HTTP calls, and process-global credential or context state.
 - Define JSON depth, UTF-8 without BOM, date, null, enum, `SecureString`, and multipart conventions for later pipeline tests.
 

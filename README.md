@@ -92,7 +92,6 @@ are implemented.
 - [Current-state review](docs/CURRENT_STATE_REVIEW.md)
 - [Freshservice API v2 coverage](docs/API_V2_COVERAGE_MATRIX.md)
 - [Security policy](SECURITY.md)
-- [Inherited generated command help](docs/en-US/) — retained only until Phase 2 cleanup; it does not describe the target surface
 
 The current-state review documents known credential, retry, import-state, test,
 and static-analysis risks. The implementation plan defines the sequence for

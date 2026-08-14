@@ -69,16 +69,16 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = @('Add-FreshServiceAgentGroupMember','Add-FreshServiceRequesterGroupMember','Connect-FreshService','Get-FreshServiceAgent','Get-FreshServiceAgentGroup','Get-FreshServiceAgentGroupMember','Get-FreshServiceAgentRole','Get-FreshServiceAnnouncement','Get-FreshServiceAsset','Get-FreshServiceAssetType','Get-FreshServiceBackgroundJob','Get-FreshServiceBusinessHour','Get-FreshServiceCannedResponse','Get-FreshServiceCannedResponseFolder','Get-FreshServiceCatalogCategory','Get-FreshServiceCatalogItem','Get-FreshServiceChange','Get-FreshServiceConnection','Get-FreshServiceContract','Get-FreshServiceContractType','Get-FreshServiceConversation','Get-FreshServiceCustomObject','Get-FreshServiceCustomObjectRecord','Get-FreshServiceDepartment','Get-FreshServiceInfo','Get-FreshServiceLocation','Get-FreshServiceNote','Get-FreshServiceOnboardingRequest','Get-FreshServiceProblem','Get-FreshServiceProduct','Get-FreshServiceProject','Get-FreshServiceProjectTask','Get-FreshServicePurchaseOrder','Get-FreshServiceRelationship','Get-FreshServiceRelationshipType','Get-FreshServiceRelease','Get-FreshServiceRequestApproval','Get-FreshServiceRequestedItem','Get-FreshServiceRequester','Get-FreshServiceRequesterGroup','Get-FreshServiceRequesterGroupMember','Get-FreshServiceSLAPolicy','Get-FreshServiceSoftware','Get-FreshServiceSoftwareInstallation','Get-FreshServiceSoftwareUser','Get-FreshServiceSolutionArticle','Get-FreshServiceSolutionCategory','Get-FreshServiceSolutionFolder','Get-FreshServiceTask','Get-FreshServiceTicket','Get-FreshServiceTimeEntry','Get-FreshServiceWorkspace','Get-FreshServiceVendor','Invoke-FreshServiceAuditLogExport','New-FreshServiceAgent','New-FreshServiceAgentGroup','New-FreshServiceAgentRoleConfig','New-FreshServiceAnnouncement','New-FreshServiceAsset','New-FreshServiceAssetType','New-FreshServiceChange','New-FreshServiceConnection','New-FreshServiceContract','New-FreshServiceContractItem','New-FreshServiceConversation','New-FreshServiceCustomObjectRecord','New-FreshServiceDepartment','New-FreshServiceLocation','New-FreshServiceNote','New-FreshServiceOnboardingRequest','New-FreshServiceProblem','New-FreshServiceProduct','New-FreshServiceProject','New-FreshServiceProjectTask','New-FreshServicePurchaseItem','New-FreshServicePurchaseOrder','New-FreshServiceRelationship','New-FreshServiceRelationshipItem','New-FreshServiceRelease','New-FreshServiceRequest','New-FreshServiceRequestApproval','New-FreshServiceRequester','New-FreshServiceRequesterGroup','New-FreshServiceSoftware','New-FreshServiceSoftwareInstallation','New-FreshServiceSoftwareUser','New-FreshServiceSolutionArticle','New-FreshServiceSolutionCategory','New-FreshServiceSolutionFolder','New-FreshServiceTask','New-FreshServiceTicket','New-FreshServiceTicketSource','New-FreshServiceTimeEntry','New-FreshServiceVendor','Remove-FreshServiceAgent','Remove-FreshServiceAgentGroup','Remove-FreshServiceAgentGroupMember','Remove-FreshServiceAnnouncement','Remove-FreshServiceAsset','Remove-FreshServiceAssetType','Remove-FreshServiceChange','Remove-FreshServiceConnection','Remove-FreshServiceConversation','Remove-FreshServiceCustomObjectRecord','Remove-FreshServiceDepartment','Remove-FreshServiceLocation','Remove-FreshServiceNote','Remove-FreshServiceProblem','Remove-FreshServiceProduct','Remove-FreshServiceProject','Remove-FreshServiceProjectTask','Remove-FreshServicePurchaseOrder','Remove-FreshServiceRelationship','Remove-FreshServiceRelease','Remove-FreshServiceRequester','Remove-FreshServiceRequesterGroup','Remove-FreshServiceRequesterGroupMember','Remove-FreshServiceSoftware','Remove-FreshServiceSoftwareInstallation','Remove-FreshServiceSoftwareUser','Remove-FreshServiceSolutionArticle','Remove-FreshServiceSolutionCategory','Remove-FreshServiceSolutionFolder','Remove-FreshServiceTask','Remove-FreshServiceTicket','Remove-FreshServiceTimeEntry','Remove-FreshServiceVendor','Restore-FreshServiceAsset','Restore-FreshServiceChange','Restore-FreshServiceProblem','Restore-FreshServiceProject','Restore-FreshServiceRelease','Restore-FreshServiceTicket','Set-FreshServiceAgent','Set-FreshServiceAgentGroup','Set-FreshServiceAnnouncement','Set-FreshServiceAsset','Set-FreshServiceAssetType','Set-FreshServiceChange','Set-FreshServiceConnection','Set-FreshServiceContract','Set-FreshServiceConversation','Set-FreshServiceCustomObjectRecord','Set-FreshServiceDepartment','Set-FreshServiceLocation','Set-FreshServiceNote','Set-FreshServiceProblem','Set-FreshServiceProduct','Set-FreshServiceProject','Set-FreshServiceProjectTask','Set-FreshServicePurchaseOrder','Set-FreshServiceRelease','Set-FreshServiceRequestApproval','Set-FreshServiceRequestedItem','Set-FreshServiceRequester','Set-FreshServiceRequesterGroup','Set-FreshServiceSoftware','Set-FreshServiceSoftwareUser','Set-FreshServiceSolutionArticle','Set-FreshServiceSolutionCategory','Set-FreshServiceSolutionFolder','Set-FreshServiceTask','Set-FreshServiceTicket','Set-FreshServiceTimeEntry','Set-FreshServiceVendor')
+    FunctionsToExport = @()
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-    CmdletsToExport = '*'
+    CmdletsToExport = @()
 
     # Variables to export from this module
-    VariablesToExport = '*'
+    VariablesToExport = @()
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport = '*'
+    AliasesToExport = @()
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -91,26 +91,6 @@
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData = @{
-        FreshserviceApiToken       = $null;
-        FreshserviceTenant         = $null;
-        FreshserviceBaseUri        = $null;
-        FreshserviceConnection     = $null;
-        FreshserviceThrottling     = $true;
-        # Exclude Common Params to use $PSBoundParameters as the JSON body
-        # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
-        FreshserviceBodyExclusions = 'Verbose',
-                                   'Debug',
-                                   'ErrorAction',
-                                   'WarningAction',
-                                   'InformationAction',
-                                   'ErrorVariable',
-                                   'WarningVariable',
-                                   'InformationVariable',
-                                   'OutVariable',
-                                   'OutBuffer',
-                                   'PipelineVariable',
-                                   'WhatIf',
-                                   'Confirm'
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.

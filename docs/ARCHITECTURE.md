@@ -361,7 +361,7 @@ New families adopt the rules directly:
 | Journeys, employee onboarding and offboarding (P2) | **Skip** — the tenant has not implemented these features. The existing onboarding commands are removed rather than migrated. |
 | Time entries, attachments (mixed) | **Skip** — not required by any intended workload (§1). |
 
-The `Decision (Add/Skip)` column in the comparison is empty for every row. Nothing in this section commits to implementing a gap — it fixes the name each gap will take **if** it is added, so the decision and the naming are not relitigated together.
+The `Decision (Add/Skip)` column in the comparison records Phase 0's explicit Add/Skip/Conditional call for every row. This section is independent of that column: it fixes the name each gap will take **if** it is ever added, so the decision and the naming are not relitigated together.
 
 ## 11. Request pipeline
 
@@ -372,7 +372,7 @@ Replace `Invoke-FreshworksRestMethod` with focused private helpers:
 | `Invoke-FsuRequest` | Per-request authentication, HTTP execution, retry policy, safe logging, and response metadata. |
 | `Invoke-FsuPagedRequest` | Link-header pagination, streaming, result limits, and page ceilings. |
 | `New-FsuUri` | Escaped path segments and encoded query parameters. |
-| `ConvertTo-FsuRequestBody` | JSON, dates, nulls, depth, and multipart bodies. |
+| `ConvertTo-FsuRequestBody` | JSON, dates, nulls, depth, and multipart bodies (serialization conventions below). |
 | `ConvertFrom-FsuResponse` | Explicit response-envelope extraction and output typing. |
 | `New-FsuErrorRecord` | Normalized, safe, machine-parseable errors. |
 
@@ -497,6 +497,25 @@ The additive half is the documented justification for §10's rule against inferr
 
 One caution on the reference page: its Policies section still says v2 scope is "limited to only tickets and conversations" while the same page documents roughly fifty resource families, and its rate-limit header table retains hourly wording contradicted by the section above it. Treat the page as authoritative for shapes and semantics, and the tenant as authoritative for limits and availability.
 
+### Serialization conventions
+
+`ConvertTo-FsuRequestBody` and `ConvertFrom-FsuResponse` (table above) are the only
+places that serialize or deserialize. Phase 4's contract tests assert these rules
+directly, so they are fixed here rather than left to implementation judgment:
+
+| Concern | Convention |
+| --- | --- |
+| JSON depth | `ConvertTo-Json -Depth 10`. Request bodies are shallow; 10 is a guard against silent truncation, not a modeled limit. |
+| Text encoding | UTF-8 without a byte-order mark on every request and response body, and on every file this pipeline writes. |
+| Date/time on the wire | ISO 8601 UTC (`yyyy-MM-ddTHH:mm:ssZ`), matching Freshservice's documented format. Values are converted to UTC before serialization; the pipeline never sends a local offset. |
+| Null handling | A parameter left unbound is omitted from the request body. A parameter explicitly set to `$null` is sent as JSON `null`. Commands distinguish the two with `$PSBoundParameters`, never with `-eq $null` on the value. Response `null` is passed through unchanged; it is never coerced to an empty string or `$false`. |
+| Enum handling | Public parameters use PowerShell `ValidateSet` (§10) over string literals matching Freshservice's documented values verbatim, including case. The pipeline sends the validated string as-is; it never remaps to a numeric or internal code. |
+| `SecureString` | Never serialized. Credential material is converted to plain text only inside the request-construction call that attaches an `Authorization` header (§6/§8), immediately before the request is sent, and is not retained in a variable, log, cache, or error record afterward. |
+| Multipart bodies | Out of scope today because attachments are out of scope (`CLAUDE.md`). If a future accepted workload needs multipart, `ConvertTo-FsuRequestBody` grows a distinct multipart branch alongside the JSON branch — it is not the JSON path's default, and the JSON conventions above still govern any JSON part within a multipart body. |
+
+These conventions apply uniformly across the pipeline (§11) and do not vary by
+resource; a resource-specific exception would itself be a contract-test failure.
+
 ## 12. Module layout and loading
 
 ```text
@@ -525,7 +544,7 @@ The manifest is the single source of public functions and aliases. It exports no
 
 An offline `tests/Architecture` check enforces the naming boundary in §10, so an accidental export fails CI rather than reaching a PSU session:
 
-- every function defined under `Private/` matches `^[A-Z][a-z]+-Fsu[A-Z]`;
+- every function defined under `Private/` matches `^[A-Z][a-zA-Z]*-Fsu[A-Z]`, case-sensitively — the verb may be multiword, as in `ConvertTo-FsuRequestBody`;
 - no function under `Private/` contains `FreshService`;
 - no function under `Public/` contains `Fsu`;
 - while implementation is incomplete, `FunctionsToExport` is an ordered subset of `SUPPORTED_COMMANDS.md` containing only commands that meet their phase exit criteria; Phase 6 and every release require the exact complete list;

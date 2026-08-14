@@ -102,13 +102,13 @@ Describe 'Authoritative documentation consistency' {
             'docs/COMMAND_PRUNE_LIST.md' = 'module has (?<Count>\d+) legacy public commands'
         }
 
-        $counts = foreach ($entry in $documentsAndPatterns.GetEnumerator()) {
-            $content = Get-Content (Join-Path $repositoryRoot $entry.Key) -Raw
-            $content | Should -Match $entry.Value
-            [int]([regex]::Match($content, $entry.Value).Groups['Count'].Value)
-        }
+        $counts = @(foreach ($entry in $documentsAndPatterns.GetEnumerator()) {
+                $content = Get-Content (Join-Path $repositoryRoot $entry.Key) -Raw
+                $content | Should -Match $entry.Value
+                [int]([regex]::Match($content, $entry.Value).Groups['Count'].Value)
+            })
 
-        ($counts | Sort-Object -Unique).Count | Should -Be 1
+        @($counts | Sort-Object -Unique).Count | Should -Be 1
         $counts[0] | Should -Be 165
     }
 

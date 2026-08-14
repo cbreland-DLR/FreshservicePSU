@@ -7,9 +7,9 @@ BeforeAll {
 
     $projectRoot = Split-Path -Path $PSScriptRoot -Parent
 
-    $allTextFiles      = Get-TextFilesList $projectRoot
+    $allTextFiles = Get-TextFilesList $projectRoot
     $unicodeFilesCount = 0
-    $totalTabsCount    = 0
+    $totalTabsCount = 0
     foreach ($textFile in $allTextFiles) {
         if (Test-FileUnicode $textFile) {
             $unicodeFilesCount++
