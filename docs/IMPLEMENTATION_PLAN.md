@@ -21,6 +21,37 @@
 - Unit and contract tests are the default CI path. PSU and live Freshservice tests run separately in credentialed environments.
 - Documentation and endpoint decisions change in the same commit as the command or contract they describe.
 
+## 1a. Current position and next steps
+
+Updated 2026-08-13. This section states where the work actually stands. Update
+it in the same commit as any change to phase status, so a reader never has to
+reconstruct the position from the phase table.
+
+**Done:** Phase 0. Phase 2. The identity-independent half of Phase 3
+(configuration validation, retry policy, response and normalized errors, audit
+events). The four Phase 4 deliverables that need no identity or limiter
+evidence (`New-FsuUri`, `ConvertTo-FsuRequestBody`, `ConvertFrom-FsuResponse`,
+and the limiter provider interface with its in-memory provider).
+
+**Not started and not startable:** everything else. The module exports zero
+commands. No public command exists, and none can be built until the request
+pipeline can authenticate, which is Phase 3's identity half.
+
+**The one thing that unblocks the rest is operator evidence, not code.**
+There is no remaining implementation work that does not depend on it:
+
+| # | Action | Owner | Unblocks |
+| --- | --- | --- | --- |
+| 1 | Run `tools/Get-PsuIdentityEvidence.ps1` for the eight runs in `tools/README.md` against the PSU instance | PSU operator | Q1, Q2, Q3, Q15 |
+| 2 | Fold the sanitized results into `OPEN_QUESTIONS.md` and close what they answer | Maintainer | — |
+| 3 | Build the Phase 3 identity adapter, credential selection, and context creation | Maintainer | Phase 3 completion |
+| 4 | Build `Invoke-FsuRequest` and `Invoke-FsuPagedRequest` on the finished contracts | Maintainer | Phase 4, then Phase 5 slices |
+| 5 | Run the Freshservice sandbox spikes: note authorship, Q8 and Q9 availability, correlation header | Maintainer with sandbox | Q7, Q8, Q9; Phase 6 |
+
+Steps 1 and 5 are independent of each other and can run in either order. Step 5
+can change the exported command count: Q8 and Q9 each gate one command, so a
+negative result reduces the surface below 22.
+
 ## 2. Supported command set
 
 The completed module exports these 22 commands and no generated aliases:
@@ -133,6 +164,14 @@ This phase records facts from the PSU test instance and Freshservice sandbox. It
 - Verify endpoint entitlement and response shape for asset assignment history and global approval search.
 - Run the note-authorship sandbox spike with and without `user_id`. Record authorship, required privilege, and Freshservice audit behavior.
 - Decide whether a correlation ID remains audit-only or is also accepted as an outbound header after a sandbox test.
+
+The PSU half of this evidence has a collection tool at
+`tools/Get-PsuIdentityEvidence.ps1`, with a run matrix and operator
+instructions in `tools/README.md`. It covers Q1, Q2, Q3, and Q15 and needs an
+operator to run it against the instance; nothing remains to be built for it.
+The Freshservice sandbox deliverables above — note authorship, the Q8 and Q9
+availability checks, and the correlation-header test — are separate work that
+this tool does not cover.
 
 ### Exit criteria
 

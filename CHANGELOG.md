@@ -33,6 +33,9 @@ this fork are recorded above the inherited history.
 
 ### Added
 
+- `tools/Get-PsuIdentityEvidence.ps1`: operator tooling outside the module
+  for collecting sanitized identity and deployment evidence. Reports are
+  not committed. See `tools/README.md` for the run matrix and instructions.
 - Offline test lanes (`tests/Unit`, `tests/Contract`, `tests/Architecture`) and
   architecture checks enforcing the naming boundary, forbidden runtime APIs,
   transport confined to `Private/Http`, and documentation alignment.

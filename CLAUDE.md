@@ -47,11 +47,29 @@ Two things this does not mean:
 - `FreshservicePSU/Private/` — shared target internals; all HTTP goes through the new request pipeline.
 - `FreshservicePSU/FreshservicePSU.psd1` — explicit exports, validated against the accepted inventory.
 - `tests/` — offline unit and contract tests by default; credentialed PSU and live tests are separate.
-- `docs/en-US/` — generated help for supported commands only.
+- `tools/` — operator tooling outside the module; not exported and not covered by `build.ps1`.
+- `docs/en-US/` — generated help for supported commands only. Does not exist yet; Phase 2 deleted the inherited topics and Phase 5 regenerates them per command.
 - `docs/PSU_SETUP.md` — operator installation, configuration, identity, validation, upgrade, and rollback guide.
 - `SECURITY.md` — private vulnerability reporting and secret-handling policy.
+
+## Where the work stands
+
+`docs/IMPLEMENTATION_PLAN.md` §1a, "Current position and next steps", is the
+single statement of what is done, what is startable, and what is waiting on
+operator evidence. Read it before planning work, and update it in the same
+commit as any change to phase status.
 
 ## Conventions
 
 - Command names use `FreshService`; the target module exports no generated aliases.
 - Public commands use focused PowerShell parameters and one operation/resource shape per command. Shared internals perform transport and serialization.
+- Every function under `Private/` matches `^[A-Z][a-zA-Z]*-Fsu[A-Z]`, checked case-sensitively. No `FreshService` in a private name, no `Fsu` in a public one. `tests/Architecture/Naming.Tests.ps1` enforces this.
+- Direct HTTP — `Invoke-RestMethod`, `Invoke-WebRequest`, `HttpClient` — is confined to `Private/Http`. Everything else goes through the request pipeline.
+
+## Working practice
+
+- `pwsh -NoProfile ./build.ps1 -Task Validate` is the gate: syntax, manifest, clean import, formatting, analyzer, offline tests. It must pass before a commit, and reading its test count is part of running it.
+- Importing the module must stay silent and export zero commands until a phase deliberately exports one. The clean-import lane fails on any output.
+- Tests run under `Set-StrictMode -Version Latest`, inherited from `build.ps1`. This is deliberate: test code is held to the same strictness as module code. Guard `.Count` on anything that can be `$null` with `@()`, and note that a function returning `@()` unrolls to `$null` at the call site.
+- A test that cannot fail is worse than no test. When adding a guard, break the real implementation, watch the real test fail, then restore it. Do not assert that a locally-defined broken fixture misbehaves — that proves nothing about the code under test.
+- Never commit evidence collected from a live tenant or PSU instance, sanitized or not.

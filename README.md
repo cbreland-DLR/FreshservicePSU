@@ -11,11 +11,15 @@ and is not an official Freshworks product.
 
 The repository is in the transition stage of a breaking, PowerShell 7.6 and
 PowerShell Universal modernization. The inherited command surface has been
-removed and the checked-in module is now an empty skeleton: it imports cleanly,
-exports no commands, and does not yet implement the target architecture or
-22-command contract. Backward compatibility with the legacy module is not a
-goal for the next major version. Do not use the development branch for critical
-automation.
+removed. The checked-in module imports cleanly and exports no commands, because
+shared internals are being built first. It
+does not yet implement the target architecture or the 22-command
+contract. Backward compatibility with the legacy
+module is not a goal for the next major version. Do not use the development
+branch for critical automation.
+
+For where the work stands and what happens next, see
+[Current position and next steps](docs/IMPLEMENTATION_PLAN.md#1a-current-position-and-next-steps).
 
 This fork will not publish the redesign to the PowerShell Gallery. Versioned,
 checksummed module archives will be attached to this repository's GitHub
