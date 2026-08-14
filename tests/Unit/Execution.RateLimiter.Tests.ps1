@@ -99,6 +99,16 @@ Describe 'Contention between two reservations' {
         $third.Allowed | Should -Be $false
     }
 
+    It 'rejects an object that is not a rate-limiter provider' {
+        $errorId = $null
+        try {
+            Request-FsuRateLimitReservation -Provider ([pscustomobject]@{ Nope = 1 }) -Key 'k' -Limit 10 -Now $now | Out-Null
+        } catch {
+            $errorId = $_.FullyQualifiedErrorId
+        }
+        $errorId | Should -Match 'FreshservicePSU\.Execution\.InvalidRateLimiterProvider'
+    }
+
     It 'concurrent threads reserving against the same key never both succeed past the limit' {
         $provider = New-FsuInMemoryRateLimiterProvider
         $key = New-FsuRateLimiterKey -Stage 'prod' -Tenant 't1' -EndpointClass 'ListTicket' -Now $now

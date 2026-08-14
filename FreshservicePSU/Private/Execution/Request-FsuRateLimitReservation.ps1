@@ -40,15 +40,26 @@ function Request-FsuRateLimitReservation {
         [string]$CorrelationId
     )
 
-    if ($Provider.PSObject.TypeNames -notcontains 'Freshservice.RateLimiter.InMemoryProvider') {
-        throw (New-FsuErrorRecord -ErrorId 'FreshservicePSU.Execution.InvalidRateLimiterProvider' -Message 'Provider must be a Freshservice.RateLimiter.InMemoryProvider object.' -Category InvalidArgument -CorrelationId $CorrelationId)
+    # Index access only, never PSObject.TypeNames or .Properties. One provider
+    # instance is shared by every runspace that reserves capacity — that is the
+    # point of the limiter — and concurrent member access through the PSObject
+    # adapter is not thread-safe: it intermittently throws, which would reject
+    # a legitimate reservation under exactly the contention this limiter exists
+    # to arbitrate. So this stays correct when many
+    # runspaces validate the same shared provider at once. Checking shape
+    # rather than a type name also keeps this open to the production provider,
+    # which is a different ProviderKind.
+    if ($Provider -isnot [System.Collections.IDictionary] -or
+        [string]::IsNullOrWhiteSpace([string]$Provider['ProviderKind']) -or
+        $null -eq $Provider['Store']) {
+        throw (New-FsuErrorRecord -ErrorId 'FreshservicePSU.Execution.InvalidRateLimiterProvider' -Message 'Provider must be a rate-limiter provider exposing ProviderKind, Available, and Store.' -Category InvalidArgument -CorrelationId $CorrelationId)
     }
 
-    if (-not $Provider.Available) {
+    if (-not $Provider['Available']) {
         throw (New-FsuErrorRecord -ErrorId 'FreshservicePSU.Execution.RateLimiterUnavailable' -Message 'Rate-limiter provider is unavailable; failing closed rather than sending the request unlimited.' -Category ResourceUnavailable -CorrelationId $CorrelationId)
     }
 
-    $store = $Provider.Store
+    $store = $Provider['Store']
     $reservationId = [guid]::NewGuid().ToString()
 
     [System.Threading.Monitor]::Enter($store)

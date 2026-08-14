@@ -32,11 +32,11 @@ function Clear-FsuRateLimitReservation {
         [string]$CorrelationId
     )
 
-    if (-not $Provider.Available) {
+    if (-not $Provider['Available']) {
         throw (New-FsuErrorRecord -ErrorId 'FreshservicePSU.Execution.RateLimiterUnavailable' -Message 'Rate-limiter provider is unavailable; cannot release the reservation.' -Category ResourceUnavailable -CorrelationId $CorrelationId)
     }
 
-    $store = $Provider.Store
+    $store = $Provider['Store']
 
     [System.Threading.Monitor]::Enter($store)
     try {

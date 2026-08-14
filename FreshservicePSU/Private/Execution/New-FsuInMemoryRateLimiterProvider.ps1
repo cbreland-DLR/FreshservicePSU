@@ -23,15 +23,21 @@ function New-FsuInMemoryRateLimiterProvider {
     #>
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Pure in-memory object constructor; no system state is changed.')]
     [CmdletBinding()]
-    [OutputType([PSCustomObject])]
+    [OutputType([hashtable])]
     param(
         [bool]$Available = $true
     )
 
-    return [PSCustomObject]@{
-        PSTypeName = 'Freshservice.RateLimiter.InMemoryProvider'
-        ProviderKind = 'InMemoryTestOnly'
-        Available = $Available
-        Store = [hashtable]::Synchronized(@{})
-    }
+    # A synchronized hashtable, deliberately NOT a PSCustomObject. One
+    # provider instance is shared by every runspace that reserves capacity,
+    # and concurrent member access through a PSObject adapter is not
+    # thread-safe: reading TypeNames or Properties from ~20 threads at once
+    # intermittently throws, which would reject legitimate reservations under
+    # exactly the contention this limiter exists to arbitrate. Callers use
+    # index access ($Provider['Store']) so no adapter is involved.
+    return [hashtable]::Synchronized(@{
+            ProviderKind = 'InMemoryTestOnly'
+            Available = $Available
+            Store = [hashtable]::Synchronized(@{})
+        })
 }
