@@ -1,13 +1,10 @@
 BeforeAll {
-    $moduleName         = $env:BHProjectName
-    $manifest           = Import-PowerShellDataFile -Path $env:BHPSModuleManifest
-    $outputDir          = Join-Path -Path $ENV:BHProjectPath -ChildPath 'Output'
-    $outputModDir       = Join-Path -Path $outputDir -ChildPath $env:BHProjectName
-    $outputModVerDir    = Join-Path -Path $outputModDir -ChildPath $manifest.ModuleVersion
-    $outputManifestPath = Join-Path -Path $outputModVerDir -Child "$($moduleName).psd1"
-    $manifestData       = Test-ModuleManifest -Path $outputManifestPath -Verbose:$false -ErrorAction Stop -WarningAction SilentlyContinue
+    $projectRoot = Split-Path -Path $PSScriptRoot -Parent
+    $moduleName = 'FreshservicePSU'
+    $manifestPath = Join-Path -Path $projectRoot -ChildPath "0.1.6/$moduleName.psd1"
+    $manifestData = Test-ModuleManifest -Path $manifestPath -Verbose:$false -ErrorAction Stop -WarningAction SilentlyContinue
 
-    $changelogPath    = Join-Path -Path $env:BHProjectPath -Child 'CHANGELOG.md'
+    $changelogPath = Join-Path -Path $projectRoot -ChildPath 'CHANGELOG.md'
     $changelogVersion = Get-Content $changelogPath | ForEach-Object {
         if ($_ -match "^##\s\[(?<Version>(\d+\.){1,3}\d+)\]") {
             $changelogVersion = $matches.Version
@@ -15,7 +12,7 @@ BeforeAll {
         }
     }
 
-    $script:manifest    = $null
+    $script:manifest = $null
 }
 Describe 'Module manifest' {
 
@@ -46,7 +43,7 @@ Describe 'Module manifest' {
         }
 
         It 'Has a valid guid' {
-            {[guid]::Parse($manifestData.Guid)} | Should -Not -Throw
+            { [guid]::Parse($manifestData.Guid) } | Should -Not -Throw
         }
 
         It 'Has a valid copyright' {

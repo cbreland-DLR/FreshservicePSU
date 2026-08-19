@@ -1,148 +1,40 @@
----
-external help file: FreshservicePS-help.xml
-Module Name: FreshservicePS
-online version:
-schema: 2.0.0
----
-
 # Get-FreshServiceBusinessHour
 
 ## SYNOPSIS
-Returns a Freshservice Business Hours.
+
+Gets one Freshservice business-hours definition or a bounded list.
 
 ## SYNTAX
 
-### default (Default)
-```
-Get-FreshServiceBusinessHour [[-workspace_id] <Int32[]>] [[-per_page] <Int32>] [[-page] <Int32>]
- [<CommonParameters>]
+### ById
+
+```powershell
+Get-FreshServiceBusinessHour -Id <Int64> [<CommonParameters>]
 ```
 
-### id
-```
-Get-FreshServiceBusinessHour [[-Id] <Int64>] [<CommonParameters>]
+### List (Default)
+
+```powershell
+Get-FreshServiceBusinessHour [-PerPage <Int32>] [-MaxRecords <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Returns a Freshservice Business Hours via REST API.
 
-## EXAMPLES
-
-### EXAMPLE 1
-```
-Get-FreshServiceBusinessHour
-```
-
-id                 : 21000011791
-created_at         : 8/29/2022 2:17:01 PM
-updated_at         : 8/29/2022 2:17:01 PM
-name               : Default
-description        : Default Business Calendar
-is_default         : True
-time_zone          : Eastern Time (US & Canada)
-service_desk_hours : @{monday=; tuesday=; wednesday=; thursday=; friday=}
-list_of_holidays   : {@{holiday_date=--01-16; holiday_name=Birthday of Martin Luther King Jr}, @{holiday_date=--02-20;
-                    holiday_name=Washington's Birthday}, @{holiday_date=--05-28; holiday_name=Memorial Day},
-                    @{holiday_date=--07-04; holiday_name=Independence Day}...}
-
-Return all Freshservice Business Hours.
-
-### EXAMPLE 2
-```
-Get-FreshServiceBusinessHour -Id 21000011791
-```
-
-id                 : 21000011791
-created_at         : 8/29/2022 2:17:01 PM
-updated_at         : 8/29/2022 2:17:01 PM
-name               : Default
-description        : Default Business Calendar
-is_default         : True
-time_zone          : Eastern Time (US & Canada)
-service_desk_hours : @{monday=; tuesday=; wednesday=; thursday=; friday=}
-list_of_holidays   : {@{holiday_date=--01-16; holiday_name=Birthday of Martin Luther King Jr}, @{holiday_date=--02-20;
-                    holiday_name=Washington's Birthday}, @{holiday_date=--05-28; holiday_name=Memorial Day},
-                    @{holiday_date=--07-04; holiday_name=Independence Day}...}
-
-Returns a Freshservice Business Hour by Id.
-
-## PARAMETERS
-
-### -Id
-Unique id of the specific Business Hour.
-
-https://api.freshservice.com/#business-hours
-
-```yaml
-Type: Int64
-Parameter Sets: id
-Aliases:
-
-Required: False
-Position: 1
-Default value: 0
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -workspace_id
-Workspace id filter is applicable only for accounts with Workspaces feature enabled. Providing a Workspace_id will return tickets from a specific workspace.
-
-If the workspace_id(s) parameter is NOT provided, data will only be returned for the Default\Primary Workspace.
-If the workspace_id(s) parameter is provided, data will be returned from the specified Workspaces.
-If the workspace_id value is 0, data will be returned from all workspaces (the user has access to), with only global level fields.
-
-```yaml
-Type: Int32[]
-Parameter Sets: default
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -per_page
-Number of records to return per page during pagination. 
-Maximum of 100 records.
-
-```yaml
-Type: Int32
-Parameter Sets: default
-Aliases:
-
-Required: False
-Position: 2
-Default value: 100
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -page
-The page number to retrieve during pagination.
-
-```yaml
-Type: Int32
-Parameter Sets: default
-Aliases:
-
-Required: False
-Position: 3
-Default value: 1
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
-
-## INPUTS
+Reads `GET /api/v2/business_hours` and
+`GET /api/v2/business_hours/{id}`. Configuration writes are not
+supported. `workspace_id` is not sent. `require_feature` or HTTP 405
+becomes `FreshservicePSU.BusinessHour.Unavailable`.
 
 ## OUTPUTS
 
-## NOTES
-This module was developed and tested with Freshservice REST API v2.
+### FreshservicePSU.BusinessHour
 
-## RELATED LINKS
+Contractual properties: `Id`, `Name`, `Description`, `IsDefault`,
+`TimeZone`, `CreatedAt`, `UpdatedAt`.
+
+## EXAMPLES
+
+```powershell
+Get-FreshServiceBusinessHour -Id 1
+Get-FreshServiceBusinessHour
+```

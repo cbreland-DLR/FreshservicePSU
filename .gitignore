@@ -1,6 +1,5 @@
 # Ignore configuration files
 config.xml
-todo.md
 
 # Ignore all files beginning with a dot (.)
 .*

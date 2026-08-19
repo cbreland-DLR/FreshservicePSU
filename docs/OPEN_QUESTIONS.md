@@ -1,0 +1,151 @@
+# FreshservicePSU open questions
+
+- **Status:** Active decision and evidence queue
+- **Updated:** 2026-08-16
+
+This file contains unresolved items only. Questions are grouped by who can
+answer them and how the answer is obtained. Once resolved, the result moves to
+the appropriate architecture, implementation-plan, README, or command-reference
+section and is removed here. Never record API keys, tokens, secret values, or
+unsanitized claims in this repository.
+
+## Blocking map
+
+An open question blocks only the work listed below. It does not prevent work on
+the clean module skeleton, offline CI, shared serialization and error helpers,
+or unrelated commands.
+
+| ID | Blocking level | Work actually blocked |
+| --- | --- | --- |
+| **Q1** | Deployment-ready identity, current SAML or OIDC portion | The Phase 3 adapter is implemented against the documented Entra maps and synthetic principals. Live evidence is still required before declaring a protocol deployment-ready. Pending OIDC evidence blocks only OIDC deployment-ready; missing SAML in a development PSU does not block pipeline work. |
+| **Q2** | Deployment-ready identity, current SAML or OIDC portion | Canonical `PrincipalId` normalization is implemented and unit-tested for both documented maps. Live claim presence in the tenant still must be confirmed before production identity cutover. |
+| **Q3** | Release validation | Phase 8 supported runtime/OS matrix and final package validation. It does not block implementation on the declared PowerShell 7.6 and PSU 2026.x targets. |
+| **Q7** | Note authorship confirmation | `Add-FreshServiceTicketNote` is implemented without `user_id`. Live sandbox evidence still decides whether personal keys remain required or `user_id` can set authorship. |
+| **Q8** | Optional command retention | `Search-FreshServiceApproval` is implemented with a distinct unavailable error. Live sandbox evidence still decides whether the tenant keeps the command. |
+| **Q9** | Optional command retention | `Get-FreshServiceAssetAssignmentHistory` is implemented with a distinct unavailable error. Live sandbox evidence still decides whether the tenant keeps the command. |
+
+Closed on 2026-08-16 and removed from this file: **Q13** (per-command typed
+output) is answered — the output contract for every shipped command lives in
+`SUPPORTED_COMMANDS.md` §6.5–§6.21, each command's `docs/en-US` topic states or
+references it, and contract tests assert the property names and `PSTypeName`.
+**Q15** (server-level cache plus an OS-named mutex across worker processes) is
+withdrawn — it existed only to validate the proactive shared limiter, which is
+removed in favor of reactive `429` plus `Retry-After` handling; see
+ARCHITECTURE.md "Rate limits".
+
+Conditional future-scope items block nothing unless the project owner promotes
+one into the active command set.
+
+## 1. Environment facts
+
+These are not design choices. A PSU administrator records facts from the PSU
+test instance and identity-provider configuration. Sanitized evidence is enough.
+
+| ID | Fact needed | How to answer | Completion evidence |
+| --- | --- | --- | --- |
+| Q1 | Which trusted PSU values provide identity to Apps, authenticated APIs, automation jobs, schedules, and app-token calls under SAML and OIDC? | Create one temporary diagnostic invocation for each supported PSU surface and authentication type. Record the names and data types of the available identity, claims-principal, and issuer/tenant values; include only sanitized examples. Test two interactive users, an unknown user, a schedule/system execution, an app token, and a reused runspace. SAML evidence can be collected now; repeat the matrix when OIDC is configured. Use `tools/Get-PsuIdentityEvidence.ps1` with the run matrix in `tools/README.md`. | A matrix naming the trusted identity source for each surface and authentication type, including missing-value behavior. OIDC may remain Pending until configured without blocking SAML implementation. |
+| Q2 | Which SAML and OIDC claims normalize to the same immutable credential-map key and readable UPN? | For current Entra SAML, confirm object identifier, tenant or trusted issuer, and name/UPN. When OIDC is configured, confirm `oid`, `tid` or trusted issuer, and `preferred_username` or `upn`. For two users, compare sanitized normalized results and verify both protocols produce `entra:<tenant-id>:<object-id>`. Use `tools/Get-PsuIdentityEvidence.ps1` with the run matrix and one temporary `-ComparisonSecret` shared only by the reports being compared, as documented in `tools/README.md`. | The exact claim names for each provider plus sanitized evidence that both normalize to the same `PrincipalId` and readable username. Do not record assertions, ID tokens, access tokens, or the temporary comparison secret. |
+| Q3 | Which exact PSU 2026.x release, operating system, and PowerShell 7.6 patch run in development and production? | Read the PSU release from the admin console. In each PSU environment run `$PSVersionTable.PSVersion.ToString()` and `[System.Runtime.InteropServices.RuntimeInformation]::OSDescription`. Use `tools/Get-PsuIdentityEvidence.ps1` with the run matrix in `tools/README.md`. | A development and production row containing PSU version, PowerShell version, and OS. PSU variables and the built-in secret vault are already settled. |
+
+### Vendor-documentation findings for Q1 and Q2 (2026-08-13)
+
+Collected from the Devolutions PowerShell Universal documentation, which now
+hosts the former `docs.powershelluniversal.com` content. These narrow the probe;
+none of them substitute for evidence from the actual instance, because the docs
+do not state per-surface behavior for every case the questions ask about.
+
+Established:
+
+- **There is no `$PSUIdentity` or `$UAIdentity`.** Both names circulate in
+  forum posts and older material and neither appears in the current variable
+  reference. Any design written against them would not run.
+- **The identity surface differs per execution surface**, which is the core of
+  Q1:
+
+  | Surface | Documented identity values |
+  | --- | --- |
+  | API | `$Identity` (string), `$ClaimsPrincipal` (ClaimsPrincipal) |
+  | App | `$User` (string, `$null` when authentication is disabled), `$Roles` (string[]), `$ClaimsPrincipal` |
+  | Script / Schedule | `$UAJob` (job object carrying `.Identity.Name`), `$Roles`; **no `$ClaimsPrincipal` is documented** |
+
+- **Scheduled and script executions therefore cannot perform claim-based
+  normalization.** Without a claims principal there is no `oid`/`tid` to build
+  `entra:<tenant-id>:<object-id>` from, only a name string. This supports the
+  existing design in ARCHITECTURE.md §8: noninteractive execution uses the
+  system credential rather than a personal mapping.
+- **PSU requires the SAML name claim
+  `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name`** as the user
+  identity; other attributes are available for role evaluation only if the IdP
+  is configured to send them. Entra role mapping uses
+  `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`.
+- **System app tokens are documented as "not tied directly to a user's
+  identity"** and are distinct from user app tokens.
+
+Still unknown, and what the instance probe must answer:
+
+- Whether Entra's SAML assertion actually carries object-identifier and
+  tenant-identifier claims in this tenant, and under exactly which claim type
+  URIs. Q2's `entra:<tenant-id>:<object-id>` key depends on this and cannot be
+  assumed from the required name claim alone.
+- How `$Identity` and `$ClaimsPrincipal` are populated for app-token calls, for
+  user tokens versus system tokens. The documentation does not say.
+- What each surface yields for an unknown or unauthenticated caller, which is
+  the fail-closed path.
+- Whether a reused runspace retains a previous caller's values.
+
+Sources, all retrieved 2026-08-13:
+
+- <https://docs.devolutions.net/powershell-universal/platform/variables>
+- <https://docs.devolutions.net/powershell-universal/security/security>
+- <https://docs.devolutions.net/powershell-universal/security/app-tokens>
+- <https://docs.devolutions.net/powershell-universal/security/enterprise-security/saml2>
+
+Treat these as current-version documentation, not as evidence about the
+deployed instance. The older `docs.powershelluniversal.com` URLs now redirect
+here, and search results still surface pre-migration pages and forum posts —
+that is where the nonexistent `$PSUIdentity` and `$UAIdentity` names come from.
+
+### Development environment (2026-08-16)
+
+The development PSU used for this work does not have SAML configured. It
+already has Entra application variables and OIDC role-group placeholders.
+The identity adapter therefore implements ARCHITECTURE.md §6's documented
+Entra SAML and OIDC claim tables and is proven with synthetic
+`ClaimsPrincipal` fixtures. Q1 and Q2 remain open until sanitized reports
+from an instance that actually issues those claims are reviewed. Do not
+stand up SAML on the development node solely to unblock coding.
+
+## 2. Engineering defaults
+
+These can be answered by accepting the recommendation. Tests then verify the
+implementation; the project owner does not need to discover the answer.
+
+| ID | Engineering question | Recommended answer | How to answer and verify it |
+| --- | --- | --- | --- |
+
+## 3. Freshservice integration verification
+
+These answers come from the Freshservice sandbox. They determine whether a
+proposed implementation is valid in the target tenant; an unavailable feature
+must produce a distinct error or be removed from scope rather than look like an
+empty result.
+
+| ID | Behavior to verify | How to test safely | Answer format |
+| --- | --- | --- | --- |
+| Q7 | Does `user_id` change ticket-note authorship, which privilege is required, and does an unauthorized value fail? | On a disposable sandbox ticket, add notes using the system key with no `user_id`, a valid agent ID, and an unauthorized agent ID. Repeat with privileged and ordinary credentials. Compare returned authorship and the Freshservice audit trail, then remove or close the test record according to sandbox policy. Use `tools/Get-FreshserviceSandboxEvidence.ps1` with explicit `-AcknowledgeWrite`; it never records keys or response values. | Record whether authorship changed, the required privilege, and whether unauthorized impersonation failed explicitly. Keep personal API keys unless the result safely satisfies the attribution requirement. |
+| Q8 | Is global approval search available, authorized, filtered, and paginated as documented? | Call `GET /approvals` in the sandbox with the documented required filters. Cover a matching result, no result, unauthorized caller, invalid filter, and more than one page when test data permits. Capture sanitized status, envelope property names, and pagination metadata with `tools/Get-FreshserviceSandboxEvidence.ps1`. | Record Available or Unavailable, required filters, response envelope, pagination method, and permission needed. Remove `Search-FreshServiceApproval` from scope if the tenant cannot support it. |
+| Q9 | Is asset assignment history available and shaped as expected? | Call `GET /assets/{display_id}/assignment-history` for a reassigned asset, never-assigned asset, missing asset, and unauthorized caller. Capture sanitized status, envelope property names, and pagination metadata with `tools/Get-FreshserviceSandboxEvidence.ps1`. | Record Available or Unavailable, identifier type, response envelope, pagination method, and permission needed. Remove `Get-FreshServiceAssetAssignmentHistory` from scope if unavailable. |
+
+## 4. Conditional future scope
+
+These are not active questions or implementation work. A consuming-script use
+case must be named before one is promoted into the decision queue.
+
+| Capability | Promotion trigger | How to answer after promotion |
+| --- | --- | --- |
+| Ticket CSAT response | A consumer requires a CSAT report and the tenant uses Freshservice surveys. | Name the consuming script, required fields, endpoint entitlement, and expected output contract. |
+| Standalone ticket conversations | A consumer needs independent retrieval rather than the ticket embed. | Explain why the embed is insufficient and define paging and output requirements. |
+| Catalog item and category reads | A consuming script needs service-catalog choices. | Name the script and exact fields required for choices and validation. |
+| Canned responses | A consuming script inserts approved response templates. | Define search, selection, permission, and output requirements. |
+| Solution article search | A consuming script provides knowledge suggestions. | Define its query, ranking, permissions, and bounded result requirements. |
+| Custom-object reads | A supported ticket or asset field requires custom-object-backed choices. | Name the dependent field and define the smallest read-only command contract that satisfies it. |

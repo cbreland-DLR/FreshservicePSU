@@ -62,7 +62,7 @@ function Test-FileUnicode {
     )
 
     process {
-        $bytes     = [IO.File]::ReadAllBytes($FileInfo.FullName)
+        $bytes = [IO.File]::ReadAllBytes($FileInfo.FullName)
         $zeroBytes = @($bytes -eq 0)
         return [bool]$zeroBytes.Length
     }

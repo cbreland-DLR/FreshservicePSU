@@ -1,61 +1,71 @@
-# How to contribute
+# Contributing to FreshservicePSU
 
-Contributions to FreshservicePS are highly encouraged and desired.
-Below are some guidelines that will help make the process as smooth as possible.
+Thank you for helping improve this fork. Open an issue before starting a large
+feature, architectural change, or new API-resource family so its scope can be
+checked against the modernization plan.
 
-## Getting Started
+## Project scope
 
-- Make sure you have a [GitHub account](https://github.com/signup/free)
-- Submit a new issue, assuming one does not already exist.
-  - Clearly describe the issue including steps to reproduce when it is a bug.
-  - Make sure you fill in the earliest version that you know has the issue.
-- Fork the repository on GitHub
+Changes must remain within the scope defined in the repository guidance:
 
-## Suggesting Enhancements
+- Standard Freshservice only; MSP-specific surfaces are out of scope.
+- Freshservice API v2 only.
+- PowerShell 7.6 and PowerShell Universal are the target platform.
+- Breaking changes are allowed for the next major version, but must be
+  documented.
 
-I want to know what you think is missing from FreshservicePS and how it can be made better.
+Read the [target architecture](../docs/ARCHITECTURE.md) and
+[supported command reference](../docs/SUPPORTED_COMMANDS.md) before changing
+shared transport, authentication, connection, or output behavior — the
+architecture is the authority when documents disagree. Check
+[open questions](../docs/OPEN_QUESTIONS.md) before assuming an unresolved
+deployment or endpoint fact, and consult the
+[command prune list](../docs/COMMAND_PRUNE_LIST.md) before restoring or
+reintroducing a removed command name.
 
-- When submitting an issue for an enhancement, please be as clear as possible about why you think the enhancement is needed and what the benefit of it would be.
+## Making a change
 
-## Making Changes
+1. Create a branch from the current development branch.
+2. Keep commits focused and avoid unrelated generated-file churn.
+3. Add offline tests for new behavior. Keep PSU and live-tenant tests explicitly
+   tagged and opt-in.
+4. Update command help and architecture or migration documentation when public
+   behavior changes.
+5. Run the relevant checks and `git diff --check` before opening a pull request.
 
-- From your fork of the repository, create a topic branch where work on your change will take place.
-- To quickly create a topic branch based on master; `git checkout -b my_contribution master`.
-  Please avoid working directly on the `master` branch.
-- Make commits of logical units.
-- Check for unnecessary whitespace with `git diff --check` before committing.
-- Please follow the prevailing code conventions in the repository.
-  Differences in style make the code harder to understand for everyone.
-- Make sure your commit messages are in the proper format.
+Run the offline repository checks from PowerShell 7.6:
 
+```powershell
+./build.ps1 -Task Test
+./build.ps1 -Task Analyze
+Invoke-Pester -Path ./tests/Documentation.Tests.ps1
 ```
-    Add more cowbell to Get-Something.ps1
 
-    The functionality of Get-Something would be greatly improved if there was a little
-    more 'pizzazz' added to it. I propose a cowbell. Adding more cowbell has been
-    shown in studies to both increase one's mojo, and cement one's status
-    as a rock legend.
+Use `./build.ps1 -Task Validate -Bootstrap` only when you intend to install the
+pinned build dependencies for the current user. Credentialed PSU and live
+Freshservice tests are separate and opt-in.
+
+When operator tooling changes, run its separate offline gate as well:
+
+```powershell
+./build.ps1 -Task Validate,Tools
 ```
 
-- Make sure you have added all the necessary Pester tests for your changes.
-- Run _all_ Pester tests in the module to assure nothing else was accidentally broken.
+The inherited resource suite connects to a live tenant and performs mutations.
+Never run it against production. A pull request must state exactly which tests
+were run and which could not be run.
 
-## Documentation
+## Pull requests
 
-I am infallible and as such my documenation needs no corectoin.
-In the highly unlikely event that that is _not_ the case, commits to update or add documentation are highly apprecaited.
+Open pull requests against
+[cbreland-DLR/FreshservicePSU](https://github.com/cbreland-DLR/FreshservicePSU).
+Describe the problem, the chosen design, user-visible or breaking changes, test
+evidence, and any remaining limitations. Link the relevant issue when one
+exists.
 
-## Submitting Changes
+By contributing, you agree that your contribution is licensed under the
+repository's [MIT License](../LICENSE).
 
-- Push your changes to a topic branch in your fork of the repository.
-- Submit a pull request to the main repository.
-- Once the pull request has been reviewed and accepted, it will be merged with the master branch.
-- Celebrate
-
-## Additional Resources
-
-- [General GitHub documentation](https://help.github.com/)
-- [GitHub forking documentation](https://guides.github.com/activities/forking/)
-- [GitHub pull request documentation](https://help.github.com/send-pull-requests/)
-- [GitHub Flow guide](https://guides.github.com/introduction/flow/)
-- [GitHub's guide to contributing to open source projects](https://guides.github.com/activities/contributing-to-open-source/)
+Report vulnerabilities through the private process in
+[SECURITY.md](../SECURITY.md), never through a public issue containing secrets
+or tenant data.

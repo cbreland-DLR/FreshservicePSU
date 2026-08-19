@@ -5,14 +5,11 @@ BeforeAll {
     # Make sure MetaFixers.psm1 is loaded - it contains Get-TextFilesList
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'MetaFixers.psm1') -Verbose:$false -Force
 
-    $projectRoot = $ENV:BHProjectPath
-    if (-not $projectRoot) {
-        $projectRoot = $PSScriptRoot
-    }
+    $projectRoot = Split-Path -Path $PSScriptRoot -Parent
 
-    $allTextFiles      = Get-TextFilesList $projectRoot
+    $allTextFiles = Get-TextFilesList $projectRoot
     $unicodeFilesCount = 0
-    $totalTabsCount    = 0
+    $totalTabsCount = 0
     foreach ($textFile in $allTextFiles) {
         if (Test-FileUnicode $textFile) {
             $unicodeFilesCount++

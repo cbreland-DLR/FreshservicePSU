@@ -1,186 +1,92 @@
----
-external help file: FreshservicePS-help.xml
-Module Name: FreshservicePS
-online version:
-schema: 2.0.0
----
-
 # Get-FreshServiceLocation
 
 ## SYNOPSIS
-Returns a Freshservice Location.
+
+Gets one Freshservice location or a bounded list of locations.
 
 ## SYNTAX
 
-### default (Default)
-```
-Get-FreshServiceLocation [[-per_page] <Int32>] [[-page] <Int32>] [<CommonParameters>]
+### ById
+
+```powershell
+Get-FreshServiceLocation -Id <Int64> [<CommonParameters>]
 ```
 
-### id
-```
-Get-FreshServiceLocation [[-Id] <Int64>] [<CommonParameters>]
-```
+### List (Default)
 
-### ByName
-```
-Get-FreshServiceLocation [[-Name] <String>] [[-per_page] <Int32>] [[-page] <Int32>] [<CommonParameters>]
+```powershell
+Get-FreshServiceLocation [-Name <String>] [-PerPage <Int32>] [-MaxRecords <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Returns a Freshservice Location via REST API.
 
-https://api.freshservice.com/#view_a_location
+Reads location records for PSU form choices and report dimensions. Tenant,
+stage, and credentials come from the trusted PSU execution context. There is
+no public parameter for workspace, secret, identity, or base URI.
 
-## EXAMPLES
+- Single-object read: `GET /api/v2/locations/{id}`
+- Bounded list: `GET /api/v2/locations` with `per_page` 1-100, following
+  `Link rel=next` until `MaxRecords` is reached (default 1000).
+- Optional `-Name` sends the documented filter `query=name:'...'`.
 
-### EXAMPLE 1
-```
-Get-FreshServiceLocation
-```
-
-address            : @{line1=; line2=; city=; state=; country=; zipcode=}
-contact_name       :
-created_at         : 8/29/2022 2:17:48 PM
-email              :
-id                 : 21000159902
-name               : Japan
-parent_location_id : 21000159892
-phone              :
-primary_contact_id :
-updated_at         : 8/29/2022 2:17:48 PM
-
-address            : @{line1=; line2=; city=; state=; country=; zipcode=}
-contact_name       :
-created_at         : 8/29/2022 2:17:48 PM
-email              :
-id                 : 21000159901
-name               : China
-parent_location_id : 21000159892
-phone              :
-primary_contact_id :
-updated_at         : 8/29/2022 2:17:48 PM
-
-address            : @{line1=; line2=; city=; state=; country=; zipcode=}
-contact_name       :
-created_at         : 8/29/2022 2:17:48 PM
-email              :
-id                 : 21000159900
-name               : India
-parent_location_id : 21000159892
-phone              :
-primary_contact_id :
-updated_at         : 8/29/2022 2:17:48 PM
-
-Returns all Freshservice Locations
-
-### EXAMPLE 2
-```
-Get-FreshServiceLocation -Id 21000159902
-```
-
-address            : @{line1=; line2=; city=; state=; country=; zipcode=}
-contact_name       :
-created_at         : 8/29/2022 2:17:48 PM
-email              :
-id                 : 21000159902
-name               : Japan
-parent_location_id : 21000159892
-phone              :
-primary_contact_id :
-updated_at         : 8/29/2022 2:17:48 PM
-
-Returns a Freshservice Location by Id.
-
-### EXAMPLE 3
-```
-Get-FreshServiceLocation -Name Japan
-```
-
-address            : @{line1=; line2=; city=; state=; country=; zipcode=}
-contact_name       :
-created_at         : 8/29/2022 2:17:48 PM
-email              :
-id                 : 21000159902
-name               : Japan
-parent_location_id : 21000159892
-phone              :
-primary_contact_id :
-updated_at         : 8/29/2022 2:17:48 PM
-
-Returns a Freshservice Location By Name.
+Location data is cache-eligible. The shared reference-data cache is not
+wired yet; every call hits Freshservice. A later-page failure throws
+`FreshservicePSU.PartialResults` after some records may already have been
+emitted. Required Freshservice permission: view locations
+(`freshservice.locations.view`).
 
 ## PARAMETERS
 
 ### -Id
-Unique id of the Location.
 
-```yaml
-Type: Int64
-Parameter Sets: id
-Aliases:
-
-Required: False
-Position: 1
-Default value: 0
-Accept pipeline input: False
-Accept wildcard characters: False
-```
+Freshservice location identifier.
 
 ### -Name
-Return by Location Name.
 
-```yaml
-Type: String
-Parameter Sets: ByName
-Aliases:
+Location name passed to the filter query. Not combined with `-Id`.
 
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
+### -PerPage
 
-### -per_page
-Number of records to return per page during pagination. 
-Maximum of 100 records.
+Page size, 1 through 100. Default 100.
 
-```yaml
-Type: Int32
-Parameter Sets: default, ByName
-Aliases:
+### -MaxRecords
 
-Required: False
-Position: 1
-Default value: 100
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -page
-The page number to retrieve during pagination.
-
-```yaml
-Type: Int32
-Parameter Sets: default, ByName
-Aliases:
-
-Required: False
-Position: 2
-Default value: 1
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
-
-## INPUTS
+Stop after this many list records. Default 1000.
 
 ## OUTPUTS
 
-## NOTES
-This module was developed and tested with Freshservice REST API v2.
+### FreshservicePSU.Location
 
-## RELATED LINKS
+Contractual properties: `Id`, `Name`, `ParentLocationId`,
+`PrimaryContactId`, `CreatedAt`, `UpdatedAt`. Additional vendor fields such
+as `Address`, `ContactName`, `Email`, `Phone`, and `Primary` may be present
+and are not compatibility guarantees.
+
+## EXAMPLES
+
+### PSU form lookup
+
+```powershell
+Get-FreshServiceLocation -Id 15
+```
+
+### Bounded name filter for a choice list
+
+```powershell
+Get-FreshServiceLocation -Name 'HQ' -MaxRecords 20
+```
+
+### Streaming a list
+
+```powershell
+try {
+    $locations = @(Get-FreshServiceLocation -MaxRecords 200)
+} catch {
+    # Discard or reconcile $locations if the error is PartialResults.
+    throw
+}
+```
+
+## NOTES
+
+Does not create, update, or delete locations. Does not accept `workspace_id`.

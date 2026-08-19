@@ -1,31 +1,36 @@
-<!--- Provide a general summary of the issue in the Title above -->
+<!-- Do not include API keys, tenant secrets, personal data, or private logs. Report vulnerabilities through SECURITY.md instead of a public issue. -->
 
-## Expected Behavior
-<!--- If you're describing a bug, tell us what should happen -->
-<!--- If you're suggesting a change/improvement, tell us how it should work -->
+## Summary
 
-## Current Behavior
-<!--- If describing a bug, tell us what happens instead of the expected behavior -->
-<!--- If suggesting a change/improvement, explain the difference from current behavior -->
+Describe the bug, limitation, or proposed change.
 
-## Possible Solution
-<!--- Not obligatory, but suggest a fix/reason for the bug, -->
-<!--- or ideas how to implement the addition or change -->
+## Expected behavior
 
-## Steps to Reproduce (for bugs)
-<!--- Provide a link to a live example, or an unambiguous set of steps to -->
-<!--- reproduce this bug. Include code to reproduce, if relevant -->
+What should happen?
+
+## Actual behavior
+
+What happens instead? Include sanitized errors or output when useful.
+
+## Reproduction
+
+```powershell
+# Minimal sanitized example
+```
+
 1.
 2.
 3.
-4.
 
-## Context
-<!--- How has this issue affected you? What are you trying to accomplish? -->
-<!--- Providing context helps us come up with a solution that is most useful in the real world -->
+## Environment
 
-## Your Environment
-<!--- Include as many relevant details about the environment you experienced the bug in -->
-* Module version used:
-* Operating System and PowerShell version:
+- Fork/module version or commit:
+- PowerShell version (`$PSVersionTable`):
+- Operating system:
+- PowerShell Universal version, if applicable:
+- Freshservice feature or resource involved:
 
+## Additional context
+
+State whether the behavior was reproduced against a disposable development
+tenant. Do not disclose the tenant name or credentials.
